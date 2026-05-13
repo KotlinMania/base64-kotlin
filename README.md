@@ -180,7 +180,7 @@ This project is dual-licensed under MIT and Apache 2.0.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:base64-kotlin:0.1.0-SNAPSHOT")
+    implementation("io.github.kotlinmania:base64-kotlin:0.1.0")
 }
 ```
 

@@ -9,8 +9,9 @@ class AlphabetTest {
     fun detectsDuplicateStart() {
         assertEquals(
             ParseAlphabetError.DuplicatedByte('A'.code.toByte()),
-            Alphabet.new("AACDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
-                .exceptionOrNull(),
+            Alphabet.new(
+                "AACDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+            ).exceptionOrNull(),
         )
     }
 
@@ -18,8 +19,9 @@ class AlphabetTest {
     fun detectsDuplicateEnd() {
         assertEquals(
             ParseAlphabetError.DuplicatedByte('/'.code.toByte()),
-            Alphabet.new("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789//")
-                .exceptionOrNull(),
+            Alphabet.new(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789//",
+            ).exceptionOrNull(),
         )
     }
 
@@ -27,8 +29,9 @@ class AlphabetTest {
     fun detectsDuplicateMiddle() {
         assertEquals(
             ParseAlphabetError.DuplicatedByte('Z'.code.toByte()),
-            Alphabet.new("ABCDEFGHIJKLMNOPQRSTUVWXYZZbcdefghijklmnopqrstuvwxyz0123456789+/")
-                .exceptionOrNull(),
+            Alphabet.new(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZZbcdefghijklmnopqrstuvwxyz0123456789+/",
+            ).exceptionOrNull(),
         )
     }
 
@@ -46,8 +49,9 @@ class AlphabetTest {
     fun detectsPadding() {
         assertEquals(
             ParseAlphabetError.ReservedByte('='.code.toByte()),
-            Alphabet.new("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+=")
-                .exceptionOrNull(),
+            Alphabet.new(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+=",
+            ).exceptionOrNull(),
         )
     }
 
@@ -55,25 +59,27 @@ class AlphabetTest {
     fun detectsUnprintable() {
         // form feed
         assertEquals(
-            ParseAlphabetError.UnprintableByte(0x0c.toByte()),
-            Alphabet.new("BCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
-                .exceptionOrNull(),
+            ParseAlphabetError.UnprintableByte(0xc.toByte()),
+            Alphabet.new(
+                "\u000cBCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+            ).exceptionOrNull(),
         )
     }
 
     @Test
     fun sameAsUnchecked() {
         assertEquals(
-            STANDARD,
-            Alphabet.new("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
-                .getOrThrow(),
+            Alphabet.STANDARD,
+            Alphabet.tryFrom(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+            ).getOrThrow(),
         )
     }
 
     @Test
     fun strSameAsInput() {
         val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        val a = Alphabet.new(alphabet).getOrThrow()
-        assertEquals(alphabet, a.asStr())
+        val a = Alphabet.tryFrom(alphabet).getOrThrow()
+        assertEquals(alphabet, a.asString())
     }
 }
