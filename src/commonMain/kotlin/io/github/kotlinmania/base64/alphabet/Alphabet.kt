@@ -1,4 +1,4 @@
-// port-lint: source src/alphabet.rs
+// port-lint: source alphabet.rs
 // Provides [Alphabet] and constants for alphabets commonly used in the wild.
 
 package io.github.kotlinmania.base64.alphabet
@@ -194,6 +194,28 @@ class Alphabet internal constructor(
         )
     }
 }
+
+/**
+ * The standard alphabet (with `+` and `/`) specified in RFC 4648.
+ */
+public val STANDARD: Alphabet = Alphabet.STANDARD
+
+/**
+ * The URL-safe alphabet (with `-` and `_`) specified in RFC 4648.
+ */
+public val URL_SAFE: Alphabet = Alphabet.URL_SAFE
+
+/** The alphabet used by crypt. */
+public val CRYPT: Alphabet = Alphabet.CRYPT
+
+/** The alphabet used by bcrypt. */
+public val BCRYPT: Alphabet = Alphabet.BCRYPT
+
+/** The alphabet used in IMAP-modified UTF-7. */
+public val IMAP_MUTF7: Alphabet = Alphabet.IMAP_MUTF7
+
+/** The alphabet used in BinHex 4.0 files. */
+public val BIN_HEX: Alphabet = Alphabet.BIN_HEX
 
 /**
  * Possible errors when constructing an [Alphabet] from a [String].

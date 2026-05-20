@@ -1,4 +1,4 @@
-// port-lint: source src/alphabet.rs
+// port-lint: source alphabet.rs
 package io.github.kotlinmania.base64.alphabet
 
 import kotlin.test.Test
