@@ -1,11 +1,5 @@
-// port-lint: source src/decode.rs
+// port-lint: source decode.rs
 package io.github.kotlinmania.base64
-
-// Pre-port note (will be removed when general_purpose lands): the upstream module also exposes a
-// set of deprecated free functions (`decode`, `decode_engine`, `decode_engine_vec`,
-// `decode_engine_slice`) plus the `decoded_len_estimate` helper. Those are intentionally left
-// untranslated here until `engine/general_purpose/mod.rs` is ported, since they reference
-// `engine::general_purpose::STANDARD`.
 
 /** Errors that can occur while decoding. */
 public sealed class DecodeError : Exception() {

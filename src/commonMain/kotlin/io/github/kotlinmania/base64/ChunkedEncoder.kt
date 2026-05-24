@@ -1,4 +1,4 @@
-// port-lint: source src/chunked_encoder.rs
+// port-lint: source chunked_encoder.rs
 package io.github.kotlinmania.base64
 
 import io.github.kotlinmania.base64.engine.Config

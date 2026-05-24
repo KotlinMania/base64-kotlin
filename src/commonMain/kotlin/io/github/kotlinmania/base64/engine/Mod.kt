@@ -1,4 +1,4 @@
-// port-lint: source src/engine/mod.rs
+// port-lint: source engine/mod.rs
 package io.github.kotlinmania.base64.engine
 
 import io.github.kotlinmania.base64.ChunkedEncoder
@@ -13,11 +13,10 @@ import io.github.kotlinmania.base64.encodedLen
  * Provides the [Engine] abstraction and out of the box implementations.
  */
 
-// pub use general_purpose::{GeneralPurpose, GeneralPurposeConfig};
+// Upstream module re-export: general purpose engine types.
 //
-// Re-export tracking — callers should reference
-// io.github.kotlinmania.base64.engine.general_purpose.GeneralPurpose and
-// io.github.kotlinmania.base64.engine.general_purpose.GeneralPurposeConfig directly.
+// Callers should reference io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose and
+// io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig directly.
 
 /**
  * An [Engine] provides low-level encoding and decoding operations that all other higher-level parts
@@ -28,9 +27,8 @@ import io.github.kotlinmania.base64.encodedLen
  * like a constant-time one when side channel resistance is called for, and vendor-specific
  * vectorized ones for more speed.
  *
- * See `general_purpose.STANDARD_NO_PAD` if you just want standard base64. Otherwise, when possible,
- * it's recommended to store the engine in a `val` so that references to it won't pose any
- * lifetime issues, and to avoid repeating the cost of engine setup.
+ * See `generalpurpose.STANDARD_NO_PAD` if you just want standard base64. Otherwise, when possible,
+ * store the engine in a `val` when possible to avoid repeating the cost of engine setup.
  *
  * Since almost nobody will need to implement `Engine`, docs for internal methods are hidden.
  */
@@ -101,20 +99,20 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * # Example
      *
      * ```kotlin
-     * import io.github.kotlinmania.base64.engine.general_purpose
+     * import io.github.kotlinmania.base64.engine.generalpurpose
      *
-     * val b64 = general_purpose.STANDARD.encode("hello world~".encodeToByteArray())
+     * val b64 = generalpurpose.STANDARD.encode("hello world~".encodeToByteArray())
      * println(b64)
      *
      * val customEngine: GeneralPurpose =
-     *     GeneralPurpose(alphabet.URL_SAFE, general_purpose.NO_PAD)
+     *     GeneralPurpose(alphabet.URL_SAFE, generalpurpose.NO_PAD)
      *
      * val b64Url = customEngine.encode("hello internet~".encodeToByteArray())
      * ```
      */
     public fun encode(input: ByteArray): String {
         val encodedSize = encodedLen(input.size, config().encodePadding())
-            ?: error("integer overflow when calculating buffer size")
+            ?: throw IllegalStateException("integer overflow when calculating buffer size")
 
         val buf = ByteArray(encodedSize)
 
@@ -131,13 +129,13 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * # Example
      *
      * ```kotlin
-     * import io.github.kotlinmania.base64.engine.general_purpose
+     * import io.github.kotlinmania.base64.engine.generalpurpose
      *
      * val customEngine: GeneralPurpose =
-     *     GeneralPurpose(alphabet.URL_SAFE, general_purpose.NO_PAD)
+     *     GeneralPurpose(alphabet.URL_SAFE, generalpurpose.NO_PAD)
      *
      * val buf = StringBuilder()
-     * general_purpose.STANDARD.encodeString("hello world~".encodeToByteArray(), buf)
+     * generalpurpose.STANDARD.encodeString("hello world~".encodeToByteArray(), buf)
      * println(buf)
      *
      * buf.clear()
@@ -162,23 +160,23 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * # Example
      *
      * ```kotlin
-     * import io.github.kotlinmania.base64.engine.general_purpose
+     * import io.github.kotlinmania.base64.engine.generalpurpose
      *
      * val s = "hello internet!".encodeToByteArray()
      * // make sure we'll have a slice big enough for base64 + padding
      * val buf = ByteArray(s.size * 4 / 3 + 4)
      *
-     * val bytesWritten = general_purpose.STANDARD.encodeSlice(s, buf).getOrThrow()
+     * val bytesWritten = generalpurpose.STANDARD.encodeSlice(s, buf).getOrThrow()
      *
      * // copy out just what was written
      * val written = buf.copyOf(bytesWritten)
      *
-     * check(s.contentEquals(general_purpose.STANDARD.decode(written).getOrThrow()))
+     * check(s.contentEquals(generalpurpose.STANDARD.decode(written).getOrThrow()))
      * ```
      */
     public fun encodeSlice(input: ByteArray, outputBuf: ByteArray): Result<Int> {
         val encodedSize = encodedLen(input.size, config().encodePadding())
-            ?: error("Int overflow when calculating buffer size")
+            ?: throw IllegalStateException("Int overflow when calculating buffer size")
 
         if (outputBuf.size < encodedSize) {
             return Result.failure(EncodeSliceError.OutputSliceTooSmall)
@@ -195,14 +193,14 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * # Example
      *
      * ```kotlin
-     * import io.github.kotlinmania.base64.engine.general_purpose
+     * import io.github.kotlinmania.base64.engine.generalpurpose
      *
-     * val bytes = general_purpose.STANDARD
+     * val bytes = generalpurpose.STANDARD
      *     .decode("aGVsbG8gd29ybGR+Cg==".encodeToByteArray()).getOrThrow()
      * println(bytes.toList())
      *
      * // custom engine setup
-     * val bytesUrl = GeneralPurpose(alphabet.URL_SAFE, general_purpose.NO_PAD)
+     * val bytesUrl = GeneralPurpose(alphabet.URL_SAFE, generalpurpose.NO_PAD)
      *     .decode("aGVsbG8gaW50ZXJuZXR-Cg".encodeToByteArray()).getOrThrow()
      * println(bytesUrl.toList())
      * ```
@@ -218,7 +216,7 @@ public interface Engine<C : Config, D : DecodeEstimate> {
                     when (e) {
                         is DecodeSliceError.DecodeErrorVariant -> Result.failure(e.error)
                         is DecodeSliceError.OutputSliceTooSmall ->
-                            error("ByteArray is sized conservatively")
+                            throw IllegalStateException("ByteArray is sized conservatively")
                         else -> Result.failure(e)
                     }
                 },
@@ -234,14 +232,14 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * # Example
      *
      * ```kotlin
-     * import io.github.kotlinmania.base64.engine.general_purpose
+     * import io.github.kotlinmania.base64.engine.generalpurpose
      *
      * val customEngine: GeneralPurpose =
-     *     GeneralPurpose(alphabet.URL_SAFE, general_purpose.PAD)
+     *     GeneralPurpose(alphabet.URL_SAFE, generalpurpose.PAD)
      *
      * val buffer = mutableListOf<Byte>()
      * // with the default engine
-     * general_purpose.STANDARD
+     * generalpurpose.STANDARD
      *     .decodeVec("aGVsbG8gd29ybGR+Cg==".encodeToByteArray(), buffer).getOrThrow()
      * println(buffer)
      *
@@ -261,7 +259,7 @@ public interface Engine<C : Config, D : DecodeEstimate> {
 
         val totalLenEstimate = estimate.decodedLenEstimate() + startingOutputLen
         if (totalLenEstimate < startingOutputLen) {
-            error("Overflow when calculating output buffer length")
+            throw IllegalStateException("Overflow when calculating output buffer length")
         }
 
         val tempBuf = ByteArray(estimate.decodedLenEstimate())
@@ -278,7 +276,7 @@ public interface Engine<C : Config, D : DecodeEstimate> {
                     when (e) {
                         is DecodeSliceError.DecodeErrorVariant -> Result.failure(e.error)
                         is DecodeSliceError.OutputSliceTooSmall ->
-                            error("ByteArray is sized conservatively")
+                            throw IllegalStateException("ByteArray is sized conservatively")
                         else -> Result.failure(e)
                     }
                 },
@@ -334,7 +332,8 @@ public interface Engine<C : Config, D : DecodeEstimate> {
             onFailure = { e ->
                 when (e) {
                     is DecodeSliceError.DecodeErrorVariant -> Result.failure(e.error)
-                    is DecodeSliceError.OutputSliceTooSmall -> error("Output slice is too small")
+                    is DecodeSliceError.OutputSliceTooSmall ->
+                        throw IllegalStateException("Output slice is too small")
                     else -> Result.failure(e)
                 }
             },

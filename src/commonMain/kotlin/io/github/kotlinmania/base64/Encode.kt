@@ -1,15 +1,9 @@
-// port-lint: source src/encode.rs
+// port-lint: source encode.rs
 package io.github.kotlinmania.base64
 
 import io.github.kotlinmania.base64.engine.Config
 import io.github.kotlinmania.base64.engine.DecodeEstimate
 import io.github.kotlinmania.base64.engine.Engine
-
-// Pre-port note (will be removed when general_purpose lands): the upstream module also exposes a
-// set of deprecated free functions (`encode`, `encode_engine`, `encode_engine_string`,
-// `encode_engine_slice`) and the `STANDARD` engine. Those are intentionally left untranslated
-// here until `engine/general_purpose/mod.rs` is ported, since they reference
-// `engine::general_purpose::STANDARD`.
 
 /**
  * B64-encode and pad (if configured).
@@ -41,7 +35,7 @@ internal fun <C : Config, D : DecodeEstimate> encodeWithPadding(
 
     val encodedBytes = b64BytesWritten + paddingBytes
     if (encodedBytes < b64BytesWritten) {
-        error("Int overflow when calculating b64 length")
+        throw IllegalStateException("Int overflow when calculating b64 length")
     }
 
     check(expectedEncodedSize == encodedBytes)

@@ -1,4 +1,4 @@
-// port-lint: source src/lib.rs
+// port-lint: source lib.rs
 package io.github.kotlinmania.base64
 
 /**
@@ -15,7 +15,7 @@ package io.github.kotlinmania.base64
  *
  * There is more than one way to encode a stream of bytes as "base64". Different applications use
  * different encoding [alphabets][io.github.kotlinmania.base64.alphabet.Alphabet] and
- * [padding behaviors][io.github.kotlinmania.base64.engine.general_purpose.GeneralPurposeConfig].
+ * [padding behaviors][io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig].
  *
  * ### Encoding alphabet
  *
@@ -26,7 +26,7 @@ package io.github.kotlinmania.base64
  * Most applications use the [standard][io.github.kotlinmania.base64.alphabet.STANDARD] alphabet
  * specified in [RFC 4648](https://datatracker.ietf.org/doc/html/rfc4648#section-4). If that's all
  * you need, you can get started quickly by using the pre-configured
- * [STANDARD][io.github.kotlinmania.base64.engine.general_purpose.STANDARD] engine, which is also
+ * [STANDARD][io.github.kotlinmania.base64.engine.generalpurpose.STANDARD] engine, which is also
  * available in the [io.github.kotlinmania.base64.prelude] module if you prefer a minimal `import`
  * footprint.
  *
@@ -40,7 +40,7 @@ package io.github.kotlinmania.base64
  * To avoid that, some applications use a
  * ["URL-safe" alphabet][io.github.kotlinmania.base64.alphabet.URL_SAFE], which uses `-` and `_`
  * instead. To use that alternative alphabet, use the
- * [URL_SAFE][io.github.kotlinmania.base64.engine.general_purpose.URL_SAFE] engine.
+ * [URL_SAFE][io.github.kotlinmania.base64.engine.generalpurpose.URL_SAFE] engine.
  *
  * ### Padding characters
  *
@@ -54,19 +54,19 @@ package io.github.kotlinmania.base64
  * Canonical encoding ensures that base64 encodings will be exactly the same, byte-for-byte,
  * regardless of input length. But the `=` padding characters aren't necessary for decoding, and
  * they may be omitted by using a
- * [NO_PAD][io.github.kotlinmania.base64.engine.general_purpose.NO_PAD] configuration.
+ * [NO_PAD][io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD] configuration.
  *
  * The pre-configured `NO_PAD` engines will reject inputs containing padding `=` characters. To
  * encode without padding and still accept padding while decoding, create an
- * [engine][io.github.kotlinmania.base64.engine.general_purpose.GeneralPurpose] with that
+ * [engine][io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose] with that
  * [padding mode][io.github.kotlinmania.base64.engine.DecodePaddingMode].
  *
  * ### Further customization
  *
  * Decoding and encoding behavior can be customized by creating an
- * [engine][io.github.kotlinmania.base64.engine.GeneralPurpose] with an
+ * [engine][io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose] with an
  * [alphabet][io.github.kotlinmania.base64.alphabet.Alphabet] and
- * [padding configuration][io.github.kotlinmania.base64.engine.GeneralPurposeConfig].
+ * [padding configuration][io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig].
  *
  * ## Memory allocation
  *
