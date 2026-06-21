@@ -175,7 +175,15 @@ class EncoderWriterTest {
         assertEquals(8, writer.toByteArray().size)
     }
 
-    // dropCallsFinishForYou is unported: Rust Drop finalization has no faithful Kotlin common equivalent because object finalization is nondeterministic.
+    @Test
+    fun dropCallsFinishForYou() {
+        val writer = MutableByteArrayWriter()
+        val enc = EncoderWriter(writer, NO_PAD_ENGINE)
+        assertEquals(1, enc.write("a".encodeToByteArray()).getOrThrow())
+        enc.close().getOrThrow()
+        assertEquals(NO_PAD_ENGINE.encode("a".encodeToByteArray()), writer.toByteArray().decodeToString())
+        assertEquals(2, writer.toByteArray().size)
+    }
 
     @Test
     fun everyPossibleSplitOfInput() {
