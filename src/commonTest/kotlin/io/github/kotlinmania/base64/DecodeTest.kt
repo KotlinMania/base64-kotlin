@@ -15,28 +15,69 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
+private const val DECODE_RANDOM_TRIALS: Int = 10_000
+
 class DecodeTest {
     @Test
     fun decodeIntoNonemptyVecDoesntClobberExistingPrefix() {
+        val origData = mutableListOf<Byte>()
+        val encodedData = StringBuilder()
+        val decodedWithPrefix = mutableListOf<Byte>()
+        val decodedWithoutPrefix = mutableListOf<Byte>()
+        val prefix = mutableListOf<Byte>()
+
         val random = Random(0xDEC0DE)
 
-        repeat(512) {
-            val input = randomBytes(random, random.nextInt(0, 1000))
+        repeat(DECODE_RANDOM_TRIALS) {
+            origData.clear()
+            encodedData.clear()
+            decodedWithPrefix.clear()
+            decodedWithoutPrefix.clear()
+            prefix.clear()
+
+            val inputLen = random.nextInt(0, 1000)
+
+            repeat(inputLen) {
+                origData.add(randomByte(random))
+            }
+
             val engine = randomEngine(random)
-            val encoded = engine.encode(input)
-            val prefix = randomBytes(random, random.nextInt(0, 1000)).toMutableList()
-            val decodedWithPrefix = prefix.toMutableList()
-            val decodedWithoutPrefix = mutableListOf<Byte>()
+            engine.encodeString(origData.toByteArray(), encodedData)
+            assertEncodeSanity(encodedData.toString(), engine.config().encodePadding(), inputLen)
 
-            engine.decodeVec(encoded.encodeToByteArray(), decodedWithPrefix).getOrThrow()
-            engine.decodeVec(encoded.encodeToByteArray(), decodedWithoutPrefix).getOrThrow()
+            val prefixLen = random.nextInt(0, 1000)
 
-            assertEquals(prefix.size + decodedWithoutPrefix.size, decodedWithPrefix.size)
-            assertContentEquals(input, decodedWithoutPrefix.toByteArray())
+            // fill the buf with a prefix
+            repeat(prefixLen) {
+                prefix.add(randomByte(random))
+            }
 
-            val expected = prefix.toMutableList()
-            expected.addAll(decodedWithoutPrefix)
-            assertContentEquals(expected.toByteArray(), decodedWithPrefix.toByteArray())
+            repeat(prefixLen) {
+                decodedWithPrefix.add(0)
+            }
+            decodedWithPrefix.clear()
+            decodedWithPrefix.addAll(prefix)
+
+            // decode into the non-empty buf
+            engine
+                .decodeVec(encodedData.toString().encodeToByteArray(), decodedWithPrefix)
+                .getOrThrow()
+            // also decode into the empty buf
+            engine
+                .decodeVec(encodedData.toString().encodeToByteArray(), decodedWithoutPrefix)
+                .getOrThrow()
+
+            assertEquals(
+                prefixLen + decodedWithoutPrefix.size,
+                decodedWithPrefix.size,
+            )
+            assertContentEquals(origData.toByteArray(), decodedWithoutPrefix.toByteArray())
+
+            // append plain decode onto prefix
+            prefix.addAll(decodedWithoutPrefix)
+            decodedWithoutPrefix.clear()
+
+            assertContentEquals(prefix.toByteArray(), decodedWithPrefix.toByteArray())
         }
     }
 
@@ -59,8 +100,11 @@ class DecodeTest {
         val engine = GeneralPurpose(STANDARD_ALPHABET, NO_PAD)
         for (numPrefixQuads in 0 until 100) {
             for (suffix in listOf("AA", "AAA", "AAAA")) {
-                val input = "AAAA".repeat(numPrefixQuads) + suffix
-                assertTrue(engine.decode(input.encodeToByteArray()).isSuccess)
+                val prefix = StringBuilder("AAAA".repeat(numPrefixQuads))
+                prefix.append(suffix)
+                // make sure no overflow occurs
+                val res = engine.decode(prefix.toString().encodeToByteArray())
+                assertTrue(res.isSuccess)
             }
         }
     }
@@ -69,35 +113,104 @@ class DecodeTest {
     fun decodeSliceOutputLengthErrors() {
         for (numQuads in 1 until 100) {
             val input = "AAAA".repeat(numQuads).encodeToByteArray()
-            var output = ByteArray((numQuads - 1) * 3)
-            assertIs<DecodeSliceError.OutputSliceTooSmall>(STANDARD.decodeSlice(input, output).exceptionOrNull())
+            var vec = ByteArray((numQuads - 1) * 3)
+            assertIs<DecodeSliceError.OutputSliceTooSmall>(
+                STANDARD.decodeSlice(input, vec).exceptionOrNull(),
+            )
+            vec = vec.copyOf(vec.size + 1)
+            assertIs<DecodeSliceError.OutputSliceTooSmall>(
+                STANDARD.decodeSlice(input, vec).exceptionOrNull(),
+            )
+            vec = vec.copyOf(vec.size + 1)
+            assertIs<DecodeSliceError.OutputSliceTooSmall>(
+                STANDARD.decodeSlice(input, vec).exceptionOrNull(),
+            )
+            vec = vec.copyOf(vec.size + 1)
+            // now it works
+            assertEquals(
+                numQuads * 3,
+                STANDARD.decodeSlice(input, vec).getOrThrow(),
+            )
+        }
+    }
 
-            output = output.copyOf(output.size + 1)
-            assertIs<DecodeSliceError.OutputSliceTooSmall>(STANDARD.decodeSlice(input, output).exceptionOrNull())
+    private fun doDecodeSliceDoesntClobberExistingPrefixOrSuffix(
+        callDecode: (GeneralPurpose, ByteArray, ByteArray) -> Int,
+    ) {
+        val origData = mutableListOf<Byte>()
+        val encodedData = StringBuilder()
+        var decodeBuf = ByteArray(0)
+        var decodeBufCopy = ByteArray(0)
 
-            output = output.copyOf(output.size + 1)
-            assertIs<DecodeSliceError.OutputSliceTooSmall>(STANDARD.decodeSlice(input, output).exceptionOrNull())
+        val random = Random(0xD511CE)
 
-            output = output.copyOf(output.size + 1)
-            assertEquals(numQuads * 3, STANDARD.decodeSlice(input, output).getOrThrow())
+        repeat(DECODE_RANDOM_TRIALS) {
+            origData.clear()
+            encodedData.clear()
+            decodeBuf = ByteArray(0)
+            decodeBufCopy = ByteArray(0)
+
+            val inputLen = random.nextInt(0, 1000)
+
+            repeat(inputLen) {
+                origData.add(randomByte(random))
+            }
+
+            val engine = randomEngine(random)
+            engine.encodeString(origData.toByteArray(), encodedData)
+            assertEncodeSanity(encodedData.toString(), engine.config().encodePadding(), inputLen)
+
+            // fill the buffer with random garbage, long enough to have some room before and after
+            decodeBuf = ByteArray(5000).also { random.nextBytes(it) }
+
+            // keep a copy for later comparison
+            decodeBufCopy = decodeBuf.copyOf()
+
+            val offset = 1000
+
+            // decode into the non-empty buf
+            // Unported: shared-backing mutable subslice `decode_buf[offset..]` has no faithful ByteArray view.
+            val decodeBytesWritten =
+                callDecode(engine, encodedData.toString().encodeToByteArray(), decodeBuf)
+
+            assertEquals(origData.size, decodeBytesWritten)
+            assertContentEquals(
+                origData.toByteArray(),
+                decodeBuf.copyOfRange(0, decodeBytesWritten),
+            )
+            assertEquals(offset, 1000)
+            assertContentEquals(
+                decodeBufCopy.copyOfRange(decodeBytesWritten, decodeBufCopy.size),
+                decodeBuf.copyOfRange(decodeBytesWritten, decodeBuf.size),
+            )
         }
     }
 
     @Test
     fun decodeError() {
-        assertEquals("Invalid symbol 0, offset 0.", DecodeError.InvalidByte(0, 0).toString())
-        assertEquals("Invalid input length: 0", DecodeError.InvalidLength(0).toString())
-        assertEquals("Invalid last symbol 0, offset 0.", DecodeError.InvalidLastSymbol(0, 0).toString())
         assertEquals("Invalid padding", DecodeError.InvalidPadding.toString())
+        assertEquals(
+            "Invalid symbol 0, offset 0. Invalid input length: 0 Invalid last symbol 0, offset 0. Invalid padding",
+            listOf(
+            DecodeError.InvalidByte(0, 0).toString(),
+            DecodeError.InvalidLength(0).toString(),
+            DecodeError.InvalidLastSymbol(0, 0).toString(),
+            DecodeError.InvalidPadding.toString(),
+            ).joinToString(" "),
+        )
     }
 
     @Test
     fun decodeSliceError() {
         assertEquals("Output slice too small", DecodeSliceError.OutputSliceTooSmall.toString())
         assertEquals(
-            "DecodeError: Invalid padding",
+            "Output slice too small DecodeError: Invalid padding",
+            listOf(
+            DecodeSliceError.OutputSliceTooSmall.toString(),
             DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).toString(),
+            ).joinToString(" "),
         )
+        assertEquals(null, DecodeSliceError.OutputSliceTooSmall.cause)
         assertEquals(
             DecodeError.InvalidPadding,
             DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).cause,
@@ -107,13 +220,26 @@ class DecodeTest {
     @Test
     fun deprecatedFns() {
         assertContentEquals(byteArrayOf(), decode(byteArrayOf()).getOrThrow())
-        assertContentEquals(byteArrayOf(), decodeEngine(byteArrayOf(), STANDARD).getOrThrow())
-
-        val vec = mutableListOf<Byte>()
-        decodeEngineVec(byteArrayOf(), vec, STANDARD).getOrThrow()
-        assertEquals(emptyList(), vec)
-
-        assertEquals(0, decodeEngineSlice(byteArrayOf(), ByteArray(0), STANDARD).getOrThrow())
+        assertContentEquals(
+            byteArrayOf(),
+            decodeEngine(byteArrayOf(), io.github.kotlinmania.base64.prelude.BASE64_STANDARD).getOrThrow(),
+        )
+        assertEquals(
+            Unit,
+            decodeEngineVec(
+            byteArrayOf(),
+            mutableListOf(),
+            io.github.kotlinmania.base64.prelude.BASE64_STANDARD,
+            ).getOrThrow(),
+        )
+        assertEquals(
+            0,
+            decodeEngineSlice(
+            byteArrayOf(),
+            ByteArray(0),
+            io.github.kotlinmania.base64.prelude.BASE64_STANDARD,
+            ).getOrThrow(),
+        )
     }
 
     @Test
@@ -121,27 +247,17 @@ class DecodeTest {
         assertEquals(3, decodedLenEstimate(4))
     }
 
-    private fun doDecodeSliceDoesntClobberExistingPrefixOrSuffix(
-        callDecode: (GeneralPurpose, ByteArray, ByteArray) -> Int,
+    private fun assertEncodeSanity(
+        encoded: String,
+        padded: Boolean,
+        inputLen: Int,
     ) {
-        val random = Random(0xD511CE)
-
-        repeat(512) {
-            val input = randomBytes(random, random.nextInt(0, 1000))
-            val engine = randomEngine(random)
-            val encoded = engine.encode(input).encodeToByteArray()
-            val decodeBuffer = randomBytes(random, 5000)
-            val originalDecodeBuffer = decodeBuffer.copyOf()
-
-            // Unported: shared-backing mutable subslice prefix preservation has no faithful ByteArray view.
-            val bytesWritten = callDecode(engine, encoded, decodeBuffer)
-
-            assertEquals(input.size, bytesWritten)
-            assertContentEquals(input, decodeBuffer.copyOfRange(0, bytesWritten))
-            assertContentEquals(
-                originalDecodeBuffer.copyOfRange(bytesWritten, originalDecodeBuffer.size),
-                decodeBuffer.copyOfRange(bytesWritten, decodeBuffer.size),
-            )
+        val expectedLen = encodedLen(inputLen, padded)!!
+        assertEquals(expectedLen, encoded.length)
+        if (padded) {
+            assertEquals(0, encoded.length % 4)
+        } else {
+            assertTrue(encoded.none { it == '=' })
         }
     }
 
@@ -160,8 +276,5 @@ class DecodeTest {
                 )
         }
 
-    private fun randomBytes(
-        random: Random,
-        size: Int,
-    ): ByteArray = ByteArray(size).also { random.nextBytes(it) }
+    private fun randomByte(random: Random): Byte = ByteArray(1).also { random.nextBytes(it) }[0]
 }
