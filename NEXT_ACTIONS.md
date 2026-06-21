@@ -5,9 +5,9 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 15/25 (60.0%)
-- **Function parity:** 123/285 matched (target 180) — 43.2%
+- **Function parity:** 124/285 matched (target 181) — 43.5%
 - **Class/type parity:** 29/50 matched (target 49) — 58.0%
-- **Combined symbol parity:** 152/335 matched (target 229) — 45.4%
+- **Combined symbol parity:** 153/335 matched (target 230) — 45.7%
 - **Average inline-code cosine:** 0.73 (function body across 13 matched files)
 - **Average documentation cosine:** 0.44 (doc text across 13 matched files)
 - **Cheat-zeroed Files:** 2
@@ -44,26 +44,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests chunked_encoder.rs` (current: `// port-lint: tests chunked_encoder.rs`)
 - **Lint issues:** 2
 
-### 2. base64.encode
-
-- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.75
-- **Dependents:** 0
-- **Priority Score:** 21902.5
-- **Functions:** 16/18 matched (target 30)
-- **Missing functions:** `fmt`, `assert_encoded_length`
-- **Types:** 1/1 matched (target 4)
-- **Missing types:** _none_
-- **Tests:** 9/10 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `encode.rs` vs expected `encode.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:encode.rs` vs expected `encode.rs`
-- **Provenance warning:** port-lint provenance header matched only by basename: `tests:tests/encode.rs` vs expected `encode.rs`
-- **Proposed provenance header:** `// port-lint: source encode.rs` (current: `// port-lint: source encode.rs`)
-- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests encode.rs`)
-- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests tests/encode.rs`)
-- **Lint issues:** 3
-
-### 3. general_purpose.mod
+### 2. general_purpose.mod
 
 - **Target:** `generalpurpose.GeneralPurpose [STUB] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
@@ -77,7 +58,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source engine/general_purpose/mod.rs` (current: `// port-lint: source engine/general_purpose/mod.rs`)
 - **Lint issues:** 1
 
-### 4. engine.naive
+### 3. engine.naive
 
 - **Target:** `engine.Naive [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.67
@@ -91,7 +72,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source engine/naive.rs` (current: `// port-lint: source engine/naive.rs`)
 - **Lint issues:** 1
 
-### 5. base64.display
+### 4. base64.display
 
 - **Target:** `base64.Display [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.68
@@ -108,7 +89,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests display.rs` (current: `// port-lint: tests display.rs`)
 - **Lint issues:** 2
 
-### 6. base64.decode
+### 5. base64.decode
 
 - **Target:** `base64.Decode [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.70
@@ -124,6 +105,25 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source decode.rs` (current: `// port-lint: source decode.rs`)
 - **Proposed provenance header:** `// port-lint: tests decode.rs` (current: `// port-lint: tests decode.rs`)
 - **Lint issues:** 2
+
+### 6. base64.encode
+
+- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.76
+- **Dependents:** 0
+- **Priority Score:** 11902.4
+- **Functions:** 17/18 matched (target 31)
+- **Missing functions:** `assert_encoded_length`
+- **Types:** 1/1 matched (target 4)
+- **Missing types:** _none_
+- **Tests:** 9/10 matched
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `encode.rs` vs expected `encode.rs`
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:encode.rs` vs expected `encode.rs`
+- **Provenance warning:** port-lint provenance header matched only by basename: `tests:tests/encode.rs` vs expected `encode.rs`
+- **Proposed provenance header:** `// port-lint: source encode.rs` (current: `// port-lint: source encode.rs`)
+- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests encode.rs`)
+- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests tests/encode.rs`)
+- **Lint issues:** 3
 
 ### 7. base64.alphabet
 

@@ -151,4 +151,6 @@ public sealed class EncodeSliceError : Exception() {
     }
 
     override fun toString(): String = message ?: super.toString()
+
+    internal fun fmt(): String = toString()
 }

@@ -147,6 +147,8 @@ class EngineConformanceTest {
             runInvalidLastSymbolChecks(wrapper)
             runLastQuadInvalidLengthChecks(wrapper)
             runLastQuadInvalidByteChecks(wrapper)
+            runRepresentativeTwoSymbolTailChecks(wrapper)
+            runRepresentativeThreeSymbolTailChecks(wrapper)
             runTrailingBitsForgivingChecks(wrapper)
             runInvalidByteChecks(wrapper)
             runPaddingModeChecks(wrapper)
@@ -692,6 +694,9 @@ class EngineConformanceTest {
             val padLen = addPadding(paddedLen, paddedBuf, paddedLen)
             assertContentEquals(encoded.bytes(), paddedBuf.copyOf(paddedLen + padLen))
             assertContentEquals(input, engine.decode(encoded.bytes()).getOrThrow())
+            if (encoded.contains('=')) {
+                assertDecodeError(DecodeError.InvalidPadding, engine.decode(encodedWithoutPadding.bytes()))
+            }
         }
     }
 
@@ -796,6 +801,69 @@ class EngineConformanceTest {
                 input.add('*'.code.toByte())
                 val engine = wrapper.standardWithPadMode(true, mode)
                 assertDecodeError(DecodeError.InvalidByte(prefixLen, '*'.code.toByte()), engine.decode(input.toByteArray()))
+                repeat(3) {
+                    input.add(PAD_BYTE)
+                    assertDecodeError(DecodeError.InvalidByte(prefixLen, '*'.code.toByte()), engine.decode(input.toByteArray()))
+                }
+            }
+        }
+    }
+
+    private fun runRepresentativeTwoSymbolTailChecks(wrapper: EngineWrapper) {
+        val engine = wrapper.standard()
+        val valid = mutableMapOf<String, ByteArray>()
+        for (byte in 0..255) {
+            val b64 = ByteArray(4)
+            assertEquals(2, engine.internalEncode(byteArrayOf(byte.toByte()), b64))
+            addPadding(2, b64, 2)
+            valid[b64.decodeToString()] = byteArrayOf(byte.toByte())
+        }
+
+        for (prefixQuads in listOf(0, 1, 32)) {
+            val prefix = prefixedBytes("AAAA", prefixQuads, "")
+            for (s1 in representativeSymbols()) {
+                for (s2 in representativeSymbols()) {
+                    val symbols = byteArrayOf(s1, s2, PAD_BYTE, PAD_BYTE)
+                    val expected = valid[symbols.decodeToString()]
+                    if (expected != null) {
+                        val decoded = engine.decode(prefix + symbols).getOrThrow()
+                        assertContentEquals(expected, decoded.copyOfRange(prefixQuads * 3, decoded.size))
+                    } else {
+                        assertDecodeError(DecodeError.InvalidLastSymbol(1, s2), engine.decode(symbols))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun runRepresentativeThreeSymbolTailChecks(wrapper: EngineWrapper) {
+        val engine = wrapper.standard()
+        val valid = mutableMapOf<String, ByteArray>()
+        for (b1 in 0..255) {
+            for (b2 in 0..255) {
+                val bytes = byteArrayOf(b1.toByte(), b2.toByte())
+                val b64 = ByteArray(4)
+                assertEquals(3, engine.internalEncode(bytes, b64))
+                addPadding(3, b64, 3)
+                valid[b64.decodeToString()] = bytes
+            }
+        }
+
+        for (prefixQuads in listOf(0, 1, 8)) {
+            val prefix = prefixedBytes("AAAA", prefixQuads, "")
+            for (s1 in representativeSymbols()) {
+                for (s2 in representativeSymbols()) {
+                    for (s3 in representativeSymbols()) {
+                        val symbols = byteArrayOf(s1, s2, s3, PAD_BYTE)
+                        val expected = valid[symbols.decodeToString()]
+                        if (expected != null) {
+                            val decoded = engine.decode(prefix + symbols).getOrThrow()
+                            assertContentEquals(expected, decoded.copyOfRange(prefixQuads * 3, decoded.size))
+                        } else {
+                            assertDecodeError(DecodeError.InvalidLastSymbol(2, s3), engine.decode(symbols))
+                        }
+                    }
+                }
             }
         }
     }
@@ -809,6 +877,10 @@ class EngineConformanceTest {
             assertTrue(strict.decode((prefix + "iYU=").bytes()).isSuccess)
             assertTolerantDecode(forgiving, prefix, byteArrayOf(255.toByte()), "/x==")
             assertTolerantDecode(forgiving, prefix, byteArrayOf(137.toByte(), 133.toByte()), "iYV=")
+            assertTolerantDecode(forgiving, prefix, byteArrayOf(255.toByte()), "/y==")
+            assertTolerantDecode(forgiving, prefix, byteArrayOf(137.toByte(), 133.toByte()), "iYW=")
+            assertTolerantDecode(forgiving, prefix, byteArrayOf(255.toByte()), "/z==")
+            assertTolerantDecode(forgiving, prefix, byteArrayOf(137.toByte(), 133.toByte()), "iYX=")
             prefix += "AAAA"
         }
     }
@@ -831,14 +903,18 @@ class EngineConformanceTest {
     private fun runPaddingModeChecks(wrapper: EngineWrapper) {
         val canonical = wrapper.standardWithPadMode(true, DecodePaddingMode.RequireCanonical)
         assertAllSuffixesOk(canonical, listOf("/w==", "iYU=", "AAAA"))
-        for (suffix in listOf("/w", "/w=", "iYU")) {
-            assertDecodeError(DecodeError.InvalidPadding, canonical.decode(suffix.bytes()))
+        for (prefixQuads in 0..32) {
+            for (suffix in listOf("/w", "/w=", "iYU")) {
+                assertDecodeError(DecodeError.InvalidPadding, canonical.decode(prefixedBytes("AAAA", prefixQuads, suffix)))
+            }
         }
 
         val noPadding = wrapper.standardWithPadMode(true, DecodePaddingMode.RequireNone)
         assertAllSuffixesOk(noPadding, listOf("/w", "iYU", "AAAA"))
-        for (suffix in listOf("/w=", "/w==", "iYU=")) {
-            assertDecodeError(DecodeError.InvalidPadding, noPadding.decode(suffix.bytes()))
+        for (prefixQuads in 0..32) {
+            for (suffix in listOf("/w=", "/w==", "iYU=")) {
+                assertDecodeError(DecodeError.InvalidPadding, noPadding.decode(prefixedBytes("AAAA", prefixQuads, suffix)))
+            }
         }
 
         assertAllSuffixesOk(
@@ -1062,6 +1138,20 @@ class EngineConformanceTest {
             DecodePaddingMode.Indifferent,
             DecodePaddingMode.RequireCanonical,
         )
+
+    private fun representativeSymbols(): ByteArray =
+        byteArrayOf(
+            'A'.code.toByte(),
+            'B'.code.toByte(),
+            'Z'.code.toByte(),
+            'a'.code.toByte(),
+            'z'.code.toByte(),
+            '0'.code.toByte(),
+            '9'.code.toByte(),
+            '+'.code.toByte(),
+            '/'.code.toByte(),
+        )
+
 }
 
 private interface EngineWrapper {

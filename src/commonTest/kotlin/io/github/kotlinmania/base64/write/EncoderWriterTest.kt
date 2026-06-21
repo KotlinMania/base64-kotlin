@@ -175,7 +175,7 @@ class EncoderWriterTest {
         assertEquals(8, writer.toByteArray().size)
     }
 
-    // Rust drop finalization has no faithful Kotlin common equivalent because object finalization is nondeterministic.
+    // dropCallsFinishForYou is unported: Rust Drop finalization has no faithful Kotlin common equivalent because object finalization is nondeterministic.
 
     @Test
     fun everyPossibleSplitOfInput() {
