@@ -1,9 +1,25 @@
 # port-lint Proposed Changes
 
-**Generated:** 2026-05-24
-**Source:** tmp/base64/src
-**Target:** src/commonMain/kotlin/io/github/kotlinmania/base64
+**Generated:** 2026-06-21
+**Source:** tmp
+**Target:** src
 
 These are review proposals only. They are emitted when a Rust -> Kotlin pair matches only after fallback normalization, so the existing `port-lint` header is not an exact provenance match.
 
-_No fallback provenance matches detected._
+| Target file | Current header | Proposed header | Source path | Reason |
+|-------------|----------------|-----------------|-------------|--------|
+| `commonMain/kotlin/io/github/kotlinmania/base64/ChunkedEncoder.kt` | `// port-lint: source chunked_encoder.rs` | `// port-lint: source chunked_encoder.rs` | `chunked_encoder.rs` | `port-lint provenance header matched only after fallback normalization: 'chunked_encoder.rs' vs expected 'chunked_encoder.rs'` |
+| `commonTest/kotlin/io/github/kotlinmania/base64/ChunkedEncoderTest.kt` | `// port-lint: tests chunked_encoder.rs` | `// port-lint: tests chunked_encoder.rs` | `chunked_encoder.rs` | `port-lint provenance header matched only after fallback normalization: 'tests:chunked_encoder.rs' vs expected 'chunked_encoder.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/Decode.kt` | `// port-lint: source decode.rs` | `// port-lint: source decode.rs` | `decode.rs` | `port-lint provenance header matched only after fallback normalization: 'decode.rs' vs expected 'decode.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/Encode.kt` | `// port-lint: source encode.rs` | `// port-lint: source encode.rs` | `encode.rs` | `port-lint provenance header matched only after fallback normalization: 'encode.rs' vs expected 'encode.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/engine/generalpurpose/GeneralPurpose.kt` | `// port-lint: source engine/general_purpose/mod.rs` | `// port-lint: source engine/general_purpose/mod.rs` | `engine/general_purpose/mod.rs` | `port-lint provenance header matched only after fallback normalization: 'engine/general_purpose/mod.rs' vs expected 'engine/general_purpose/mod.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/engine/generalpurpose/Decode.kt` | `// port-lint: source engine/general_purpose/decode.rs` | `// port-lint: source engine/general_purpose/decode.rs` | `engine/general_purpose/decode.rs` | `port-lint provenance header matched only after fallback normalization: 'engine/general_purpose/decode.rs' vs expected 'engine/general_purpose/decode.rs'` |
+| `commonTest/kotlin/io/github/kotlinmania/base64/engine/generalpurpose/GeneralPurposeTest.kt` | `// port-lint: source engine/general_purpose/decode.rs` | `// port-lint: source engine/general_purpose/decode.rs` | `engine/general_purpose/decode.rs` | `port-lint provenance header matched only after fallback normalization: 'engine/general_purpose/decode.rs' vs expected 'engine/general_purpose/decode.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/alphabet/Alphabet.kt` | `// port-lint: source alphabet.rs` | `// port-lint: source alphabet.rs` | `alphabet.rs` | `port-lint provenance header matched only after fallback normalization: 'alphabet.rs' vs expected 'alphabet.rs'` |
+| `commonTest/kotlin/io/github/kotlinmania/base64/alphabet/AlphabetTest.kt` | `// port-lint: source alphabet.rs` | `// port-lint: source alphabet.rs` | `alphabet.rs` | `port-lint provenance header matched only after fallback normalization: 'alphabet.rs' vs expected 'alphabet.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/Display.kt` | `// port-lint: source display.rs` | `// port-lint: source display.rs` | `display.rs` | `port-lint provenance header matched only after fallback normalization: 'display.rs' vs expected 'display.rs'` |
+| `commonTest/kotlin/io/github/kotlinmania/base64/DisplayTest.kt` | `// port-lint: tests display.rs` | `// port-lint: tests display.rs` | `display.rs` | `port-lint provenance header matched only after fallback normalization: 'tests:display.rs' vs expected 'display.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/engine/Mod.kt` | `// port-lint: source engine/mod.rs` | `// port-lint: source engine/mod.rs` | `engine/mod.rs` | `port-lint provenance header matched only after fallback normalization: 'engine/mod.rs' vs expected 'engine/mod.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/engine/generalpurpose/DecodeSuffix.kt` | `// port-lint: source engine/general_purpose/decode_suffix.rs` | `// port-lint: source engine/general_purpose/decode_suffix.rs` | `engine/general_purpose/decode_suffix.rs` | `port-lint provenance header matched only after fallback normalization: 'engine/general_purpose/decode_suffix.rs' vs expected 'engine/general_purpose/decode_suffix.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/Lib.kt` | `// port-lint: source lib.rs` | `// port-lint: source lib.rs` | `lib.rs` | `port-lint provenance header matched only after fallback normalization: 'lib.rs' vs expected 'lib.rs'` |
+| `commonMain/kotlin/io/github/kotlinmania/base64/prelude/Prelude.kt` | `// port-lint: source prelude.rs` | `// port-lint: source prelude.rs` | `prelude.rs` | `port-lint provenance header matched only after fallback normalization: 'prelude.rs' vs expected 'prelude.rs'` |
