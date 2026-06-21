@@ -103,7 +103,7 @@ internal fun completeQuadsLen(
     return Result.success(completeQuadsLen)
 }
 
-private fun decodeChunk8(
+internal fun decodeChunk8(
     input: ByteArray,
     indexAtStartOfInput: Int,
     decodeTable: IntArray,
@@ -132,7 +132,7 @@ private fun decodeChunk8(
     return null
 }
 
-private fun decodeChunk4(
+internal fun decodeChunk4(
     input: ByteArray,
     indexAtStartOfInput: Int,
     decodeTable: IntArray,

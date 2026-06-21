@@ -5,10 +5,10 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 11/25 (44.0%)
-- **Function parity:** 77/289 matched (target 118) — 26.6%
-- **Class/type parity:** 21/50 matched (target 38) — 42.0%
-- **Combined symbol parity:** 98/339 matched (target 156) — 28.9%
-- **Average inline-code cosine:** 0.74 (function body across 9 matched files)
+- **Function parity:** 80/289 matched (target 128) — 27.7%
+- **Class/type parity:** 21/50 matched (target 39) — 42.0%
+- **Combined symbol parity:** 101/339 matched (target 167) — 29.8%
+- **Average inline-code cosine:** 0.76 (function body across 9 matched files)
 - **Average documentation cosine:** 0.59 (doc text across 9 matched files)
 - **Cheat-zeroed Files:** 2
 - **Critical Issues:** 3 files with <0.60 function similarity
@@ -75,24 +75,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests decode.rs` (current: `// port-lint: tests decode.rs`)
 - **Lint issues:** 2
 
-### 4. general_purpose.decode
-
-- **Target:** `generalpurpose.Decode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.42
-- **Dependents:** 0
-- **Priority Score:** 41105.8
-- **Functions:** 6/10 matched (target 9)
-- **Missing functions:** `new`, `decode_chunk_8_writes_only_6_bytes`, `decode_chunk_4_writes_only_3_bytes`, `estimate_via_u128_inflation`
-- **Types:** 1/1 matched (target 2)
-- **Missing types:** _none_
-- **Tests:** 1/4 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode.rs` vs expected `engine/general_purpose/decode.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode.rs` vs expected `engine/general_purpose/decode.rs`
-- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
-- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
-- **Lint issues:** 2
-
-### 5. base64.alphabet
+### 4. base64.alphabet
 
 - **Target:** `alphabet.Alphabet [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.66
@@ -109,24 +92,26 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source alphabet.rs` (current: `// port-lint: source alphabet.rs`)
 - **Lint issues:** 2
 
-### 6. base64.encode
+### 5. base64.encode
 
 - **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.75
 - **Dependents:** 0
 - **Priority Score:** 21902.5
-- **Functions:** 16/18 matched (target 23)
+- **Functions:** 16/18 matched (target 30)
 - **Missing functions:** `fmt`, `assert_encoded_length`
-- **Types:** 1/1 matched (target 3)
+- **Types:** 1/1 matched (target 4)
 - **Missing types:** _none_
 - **Tests:** 9/10 matched
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `encode.rs` vs expected `encode.rs`
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:encode.rs` vs expected `encode.rs`
+- **Provenance warning:** port-lint provenance header matched only by basename: `tests:tests/encode.rs` vs expected `encode.rs`
 - **Proposed provenance header:** `// port-lint: source encode.rs` (current: `// port-lint: source encode.rs`)
 - **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests encode.rs`)
-- **Lint issues:** 2
+- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests tests/encode.rs`)
+- **Lint issues:** 3
 
-### 7. base64.display
+### 6. base64.display
 
 - **Target:** `base64.Display [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.68
@@ -143,7 +128,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests display.rs` (current: `// port-lint: tests display.rs`)
 - **Lint issues:** 2
 
-### 8. engine.mod
+### 7. engine.mod
 
 - **Target:** `engine.Mod [STUB] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
@@ -156,6 +141,23 @@ Every matched file is listed below with function and type symbol parity.
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/mod.rs` vs expected `engine/mod.rs`
 - **Proposed provenance header:** `// port-lint: source engine/mod.rs` (current: `// port-lint: source engine/mod.rs`)
 - **Lint issues:** 1
+
+### 8. general_purpose.decode
+
+- **Target:** `generalpurpose.Decode [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.59
+- **Dependents:** 0
+- **Priority Score:** 11104.1
+- **Functions:** 9/10 matched (target 12)
+- **Missing functions:** `new`
+- **Types:** 1/1 matched (target 2)
+- **Missing types:** _none_
+- **Tests:** 4/4 matched
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode.rs` vs expected `engine/general_purpose/decode.rs`
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode.rs` vs expected `engine/general_purpose/decode.rs`
+- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
+- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
+- **Lint issues:** 2
 
 ### 9. general_purpose.decode_suffix
 
