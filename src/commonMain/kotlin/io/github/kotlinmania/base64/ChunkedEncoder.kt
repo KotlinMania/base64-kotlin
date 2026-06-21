@@ -7,7 +7,6 @@ import io.github.kotlinmania.base64.engine.Engine
 
 /** The output mechanism for [ChunkedEncoder]'s encoded bytes. */
 public interface Sink {
-
     /** Handle a chunk of encoded base64 data (as UTF-8 bytes). */
     public fun writeEncodedBytes(encoded: ByteArray): Result<Unit>
 }
@@ -46,7 +45,6 @@ public class ChunkedEncoder<C : Config, D : DecodeEstimate>(
 internal class StringSink(
     private val string: StringBuilder,
 ) : Sink {
-
     override fun writeEncodedBytes(encoded: ByteArray): Result<Unit> {
         string.append(encoded.decodeToString())
 

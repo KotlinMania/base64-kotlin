@@ -1,11 +1,11 @@
 // port-lint: source prelude.rs
 package io.github.kotlinmania.base64.prelude
 
+import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD_NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.URL_SAFE
 import io.github.kotlinmania.base64.engine.generalpurpose.URL_SAFE_NO_PAD
-import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 
 /** A standard base64 engine. */
 public val BASE64_STANDARD: GeneralPurpose = STANDARD

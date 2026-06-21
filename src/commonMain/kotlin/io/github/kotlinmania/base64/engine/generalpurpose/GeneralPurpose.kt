@@ -2,12 +2,12 @@
 package io.github.kotlinmania.base64.engine.generalpurpose
 
 import io.github.kotlinmania.base64.alphabet.Alphabet
-import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
-import io.github.kotlinmania.base64.alphabet.URL_SAFE as URL_SAFE_ALPHABET
 import io.github.kotlinmania.base64.engine.Config
 import io.github.kotlinmania.base64.engine.DecodeMetadata
 import io.github.kotlinmania.base64.engine.DecodePaddingMode
 import io.github.kotlinmania.base64.engine.Engine
+import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
+import io.github.kotlinmania.base64.alphabet.URL_SAFE as URL_SAFE_ALPHABET
 
 internal const val INVALID_VALUE: Int = 255
 

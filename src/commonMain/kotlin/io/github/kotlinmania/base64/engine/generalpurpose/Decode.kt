@@ -9,7 +9,9 @@ import io.github.kotlinmania.base64.engine.DecodeMetadata
 import io.github.kotlinmania.base64.engine.DecodePaddingMode
 
 /** The decoded-size estimate used by the general-purpose engine. */
-public class GeneralPurposeEstimate internal constructor(encodedLen: Int) : DecodeEstimate {
+public class GeneralPurposeEstimate internal constructor(
+    encodedLen: Int,
+) : DecodeEstimate {
     internal val rem: Int = encodedLen % 4
     private val conservativeDecodedLen: Int = (encodedLen / 4 + if (rem > 0) 1 else 0) * 3
 
@@ -24,12 +26,13 @@ internal fun decodeHelper(
     decodeAllowTrailingBits: Boolean,
     paddingMode: DecodePaddingMode,
 ): Result<DecodeMetadata> {
-    val completeQuadsLen = completeQuadsLen(
-        input = input,
-        inputLenRem = estimate.rem,
-        outputLen = output.size,
-        decodeTable = decodeTable,
-    ).getOrElse { return Result.failure(it) }
+    val completeQuadsLen =
+        completeQuadsLen(
+            input = input,
+            inputLenRem = estimate.rem,
+            outputLen = output.size,
+            decodeTable = decodeTable,
+        ).getOrElse { return Result.failure(it) }
 
     val unrolledInputChunkSize = 32
     val unrolledOutputChunkSize = unrolledInputChunkSize / 4 * 3
@@ -39,10 +42,11 @@ internal fun decodeHelper(
     var inputIndex = 0
     var outputIndex = 0
     while (inputIndex < unrolledLoopLen) {
-        val chunkError = decodeChunk8(input, inputIndex, decodeTable, output, outputIndex)
-            ?: decodeChunk8(input, inputIndex + 8, decodeTable, output, outputIndex + 6)
-            ?: decodeChunk8(input, inputIndex + 16, decodeTable, output, outputIndex + 12)
-            ?: decodeChunk8(input, inputIndex + 24, decodeTable, output, outputIndex + 18)
+        val chunkError =
+            decodeChunk8(input, inputIndex, decodeTable, output, outputIndex)
+                ?: decodeChunk8(input, inputIndex + 8, decodeTable, output, outputIndex + 6)
+                ?: decodeChunk8(input, inputIndex + 16, decodeTable, output, outputIndex + 12)
+                ?: decodeChunk8(input, inputIndex + 24, decodeTable, output, outputIndex + 18)
         if (chunkError != null) {
             return Result.failure(DecodeSliceError.fromDecodeError(chunkError))
         }
@@ -87,9 +91,10 @@ internal fun completeQuadsLen(
         }
     }
 
-    val completeQuadsLen = (input.size - inputLenRem)
-        .coerceAtLeast(0)
-        .let { if (inputLenRem == 0) (it - 4).coerceAtLeast(0) else it }
+    val completeQuadsLen =
+        (input.size - inputLenRem)
+            .coerceAtLeast(0)
+            .let { if (inputLenRem == 0) (it - 4).coerceAtLeast(0) else it }
 
     if (outputLen < completeQuadsLen / 4 * 3) {
         return Result.failure(DecodeSliceError.OutputSliceTooSmall)

@@ -24,14 +24,15 @@ class GeneralPurposeTest {
 
     @Test
     fun estimateShortLengths() {
-        val cases = listOf(
-            0..0 to 0,
-            1..4 to 3,
-            5..8 to 6,
-            9..12 to 9,
-            13..16 to 12,
-            17..20 to 15,
-        )
+        val cases =
+            listOf(
+                0..0 to 0,
+                1..4 to 3,
+                5..8 to 6,
+                9..12 to 9,
+                13..16 to 12,
+                17..20 to 15,
+            )
 
         for ((range, decodedLenEstimate) in cases) {
             for (encodedLen in range) {

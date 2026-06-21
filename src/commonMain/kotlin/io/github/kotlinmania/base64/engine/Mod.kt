@@ -2,7 +2,6 @@
 package io.github.kotlinmania.base64.engine
 
 import io.github.kotlinmania.base64.ChunkedEncoder
-import io.github.kotlinmania.base64.DecodeError
 import io.github.kotlinmania.base64.DecodeSliceError
 import io.github.kotlinmania.base64.EncodeSliceError
 import io.github.kotlinmania.base64.StringSink
@@ -37,7 +36,6 @@ import io.github.kotlinmania.base64.encodedLen
 // - add the implementation to the `allEngines` helper
 // All tests run on all engines listed in the helper.
 public interface Engine<C : Config, D : DecodeEstimate> {
-
     /**
      * This is not meant to be called directly; it is only for [Engine] implementors.
      * See the other `encode*` functions on this interface.
@@ -111,8 +109,9 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * ```
      */
     public fun encode(input: ByteArray): String {
-        val encodedSize = encodedLen(input.size, config().encodePadding())
-            ?: throw IllegalStateException("integer overflow when calculating buffer size")
+        val encodedSize =
+            encodedLen(input.size, config().encodePadding())
+                ?: throw IllegalStateException("integer overflow when calculating buffer size")
 
         val buf = ByteArray(encodedSize)
 
@@ -175,8 +174,9 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * ```
      */
     public fun encodeSlice(input: ByteArray, outputBuf: ByteArray): Result<Int> {
-        val encodedSize = encodedLen(input.size, config().encodePadding())
-            ?: throw IllegalStateException("Int overflow when calculating buffer size")
+        val encodedSize =
+            encodedLen(input.size, config().encodePadding())
+                ?: throw IllegalStateException("Int overflow when calculating buffer size")
 
         if (outputBuf.size < encodedSize) {
             return Result.failure(EncodeSliceError.OutputSliceTooSmall)
@@ -297,13 +297,12 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      * See [decodeSliceUnchecked] for a version that throws instead of returning an error if the
      * output buffer is too small.
      */
-    public fun decodeSlice(input: ByteArray, output: ByteArray): Result<Int> {
-        return internalDecode(
+    public fun decodeSlice(input: ByteArray, output: ByteArray): Result<Int> =
+        internalDecode(
             input,
             output,
             internalDecodedLenEstimate(input.size),
         ).map { it.decodedLen }
-    }
 
     /**
      * Decode the input into the provided output slice.
@@ -322,8 +321,8 @@ public interface Engine<C : Config, D : DecodeEstimate> {
      *
      * Throws if the provided output buffer is too small for the decoded data.
      */
-    public fun decodeSliceUnchecked(input: ByteArray, output: ByteArray): Result<Int> {
-        return internalDecode(
+    public fun decodeSliceUnchecked(input: ByteArray, output: ByteArray): Result<Int> =
+        internalDecode(
             input,
             output,
             internalDecodedLenEstimate(input.size),
@@ -338,7 +337,6 @@ public interface Engine<C : Config, D : DecodeEstimate> {
                 }
             },
         )
-    }
 }
 
 /** The minimal level of configuration that engines must support. */

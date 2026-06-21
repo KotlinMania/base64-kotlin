@@ -89,10 +89,11 @@ internal fun decodeSuffix(
     }
 
     val leftoverBytesToAppend = morselsInLeftover * 6 / 8
-    var leftoverNum = (morsels[0] shl 26) or
-        (morsels[1] shl 20) or
-        (morsels[2] shl 14) or
-        (morsels[3] shl 8)
+    var leftoverNum =
+        (morsels[0] shl 26) or
+            (morsels[1] shl 20) or
+            (morsels[2] shl 14) or
+            (morsels[3] shl 8)
 
     val mask = -1 ushr (leftoverBytesToAppend * 8)
     if (!decodeAllowTrailingBits && (leftoverNum and mask) != 0) {

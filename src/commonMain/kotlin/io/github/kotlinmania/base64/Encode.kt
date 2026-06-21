@@ -27,11 +27,12 @@ internal fun <C : Config, D : DecodeEstimate> encodeWithPadding(
 
     val b64BytesWritten = engine.internalEncode(input, output)
 
-    val paddingBytes = if (engine.config().encodePadding()) {
-        addPadding(b64BytesWritten, output, b64BytesWritten)
-    } else {
-        0
-    }
+    val paddingBytes =
+        if (engine.config().encodePadding()) {
+            addPadding(b64BytesWritten, output, b64BytesWritten)
+        } else {
+            0
+        }
 
     val encodedBytes = b64BytesWritten + paddingBytes
     if (encodedBytes < b64BytesWritten) {
@@ -64,11 +65,12 @@ public fun encodedLen(bytesLen: Int, padding: Boolean): Int? {
         if (padding) {
             if (completeChunkOutput <= Int.MAX_VALUE - 4) completeChunkOutput + 4 else null
         } else {
-            val encodedRem = when (rem) {
-                1 -> 2
-                // only other possible remainder is 2
-                else -> 3
-            }
+            val encodedRem =
+                when (rem) {
+                    1 -> 2
+                    // only other possible remainder is 2
+                    else -> 3
+                }
             if (completeChunkOutput <= Int.MAX_VALUE - encodedRem) {
                 completeChunkOutput + encodedRem
             } else {

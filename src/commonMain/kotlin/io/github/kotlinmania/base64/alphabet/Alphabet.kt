@@ -146,52 +146,58 @@ class Alphabet internal constructor(
          *
          * [RFC 4648]: https://datatracker.ietf.org/doc/html/rfc4648#section-4
          */
-        val STANDARD: Alphabet = fromStrUnchecked(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-        )
+        val STANDARD: Alphabet =
+            fromStrUnchecked(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+            )
 
         /**
          * The URL-safe alphabet (with `-` and `_`) specified in [RFC 4648][].
          *
          * [RFC 4648]: https://datatracker.ietf.org/doc/html/rfc4648#section-5
          */
-        val URL_SAFE: Alphabet = fromStrUnchecked(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
-        )
+        val URL_SAFE: Alphabet =
+            fromStrUnchecked(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
+            )
 
         /**
          * The `crypt(3)` alphabet (with `.` and `/` as the _first_ two characters).
          *
          * Not standardized, but folk wisdom on the net asserts that this alphabet is what crypt uses.
          */
-        val CRYPT: Alphabet = fromStrUnchecked(
-            "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-        )
+        val CRYPT: Alphabet =
+            fromStrUnchecked(
+                "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+            )
 
         /**
          * The bcrypt alphabet.
          */
-        val BCRYPT: Alphabet = fromStrUnchecked(
-            "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-        )
+        val BCRYPT: Alphabet =
+            fromStrUnchecked(
+                "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+            )
 
         /**
          * The alphabet used in IMAP-modified UTF-7 (with `+` and `,`).
          *
          * See [RFC 3501](https://tools.ietf.org/html/rfc3501#section-5.1.3)
          */
-        val IMAP_MUTF7: Alphabet = fromStrUnchecked(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+,",
-        )
+        val IMAP_MUTF7: Alphabet =
+            fromStrUnchecked(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+,",
+            )
 
         /**
          * The alphabet used in BinHex 4.0 files.
          *
          * See [BinHex 4.0 Definition](http://files.stairways.com/other/binhex-40-specs-info.txt)
          */
-        val BIN_HEX: Alphabet = fromStrUnchecked(
-            "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr",
-        )
+        val BIN_HEX: Alphabet =
+            fromStrUnchecked(
+                "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr",
+            )
     }
 }
 
@@ -221,18 +227,26 @@ public val BIN_HEX: Alphabet = Alphabet.BIN_HEX
  * Possible errors when constructing an [Alphabet] from a [String].
  */
 // Lifted from upstream attributes: derives Debug, Eq, PartialEq; implements std::error::Error.
-sealed class ParseAlphabetError(message: String) : RuntimeException(message) {
+sealed class ParseAlphabetError(
+    message: String,
+) : RuntimeException(message) {
     /** Alphabets must be 64 ASCII bytes */
     object InvalidLength : ParseAlphabetError("Invalid length - must be 64 bytes")
 
     /** All bytes must be unique */
-    data class DuplicatedByte(val b: Byte) : ParseAlphabetError("Duplicated byte: ${formatPaddedHex(b)}")
+    data class DuplicatedByte(
+        val b: Byte,
+    ) : ParseAlphabetError("Duplicated byte: ${formatPaddedHex(b)}")
 
     /** All bytes must be printable (in the range `[32, 126]`). */
-    data class UnprintableByte(val b: Byte) : ParseAlphabetError("Unprintable byte: ${formatPaddedHex(b)}")
+    data class UnprintableByte(
+        val b: Byte,
+    ) : ParseAlphabetError("Unprintable byte: ${formatPaddedHex(b)}")
 
     /** `=` cannot be used */
-    data class ReservedByte(val b: Byte) : ParseAlphabetError("Reserved byte: ${formatPaddedHex(b)}")
+    data class ReservedByte(
+        val b: Byte,
+    ) : ParseAlphabetError("Reserved byte: ${formatPaddedHex(b)}")
 }
 
 // Format a byte the way Rust's `{:#04x}` does: lowercase hex, two digits, leading `0x`.

@@ -12,7 +12,10 @@ public sealed class DecodeError : Exception() {
      * This error may also indicate that extraneous trailing input bytes are present, causing
      * otherwise valid padding to no longer be the last bytes of input.
      */
-    public data class InvalidByte(val index: Int, val byte: Byte) : DecodeError() {
+    public data class InvalidByte(
+        val index: Int,
+        val byte: Byte,
+    ) : DecodeError() {
         override val message: String get() = "Invalid symbol $byte, offset $index."
     }
 
@@ -20,7 +23,9 @@ public sealed class DecodeError : Exception() {
      * The length of the input, as measured in valid base64 symbols, is invalid.
      * There must be 2-4 symbols in the last input quad.
      */
-    public data class InvalidLength(val len: Int) : DecodeError() {
+    public data class InvalidLength(
+        val len: Int,
+    ) : DecodeError() {
         override val message: String get() = "Invalid input length: $len"
     }
 
@@ -30,7 +35,10 @@ public sealed class DecodeError : Exception() {
      * Unlike [InvalidByte], which reports symbols that aren't in the alphabet,
      * this error is for symbols that are in the alphabet but represent nonsensical encodings.
      */
-    public data class InvalidLastSymbol(val index: Int, val byte: Byte) : DecodeError() {
+    public data class InvalidLastSymbol(
+        val index: Int,
+        val byte: Byte,
+    ) : DecodeError() {
         override val message: String get() = "Invalid last symbol $byte, offset $index."
     }
 
@@ -48,7 +56,9 @@ public sealed class DecodeError : Exception() {
 /** Errors that can occur while decoding into a slice. */
 public sealed class DecodeSliceError : Exception() {
     /** A [DecodeError] occurred. */
-    public data class DecodeErrorVariant(val error: DecodeError) : DecodeSliceError() {
+    public data class DecodeErrorVariant(
+        val error: DecodeError,
+    ) : DecodeSliceError() {
         override val message: String get() = "DecodeError: $error"
         override val cause: Throwable get() = error
     }
