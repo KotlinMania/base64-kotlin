@@ -177,4 +177,25 @@ public class DecoderReader<C : Config, D : DecodeEstimate, R : ByteReader>(
     }
 
     public fun intoInner(): R = inner
+
+    override fun toString(): String =
+        "DecoderReader(" +
+            "b64Offset=$b64Offset, " +
+            "b64Len=$b64Len, " +
+            "decodedChunkBuffer=${decodedChunkBuffer.contentToString()}, " +
+            "decodedOffset=$decodedOffset, " +
+            "decodedLen=$decodedLen, " +
+            "inputConsumedLen=$inputConsumedLen, " +
+            "paddingOffset=$paddingOffset" +
+            ")"
+
+    internal fun fmt(): String = toString()
+
+    public companion object {
+        /** Create a decoder that reads encoded bytes from [reader]. */
+        public fun <C : Config, D : DecodeEstimate, R : ByteReader> new(
+            reader: R,
+            engine: Engine<C, D>,
+        ): DecoderReader<C, D, R> = DecoderReader(reader, engine)
+    }
 }

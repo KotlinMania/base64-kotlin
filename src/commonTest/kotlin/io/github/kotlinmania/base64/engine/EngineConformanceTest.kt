@@ -118,6 +118,24 @@ class EngineConformanceTest {
     }
 
     @Test
+    fun roundtripRandom() {
+        val rng = Random(0xE099)
+        repeat(500) {
+            val engine = randomEngine(rng)
+            val original = ByteArray(rng.nextInt(1, 1000))
+            rng.nextBytes(original)
+            val encoded = ByteArray(encodedLen(original.size, engine.config().encodePadding()) ?: error("unexpected overflow"))
+            val decoded = ByteArray(original.size)
+
+            val encodedLen = engine.encodeSlice(original, encoded).getOrThrow()
+            val decodedLen = engine.decodeSliceUnchecked(encoded.copyOf(encodedLen), decoded).getOrThrow()
+
+            assertEquals(original.size, decodedLen)
+            assertContentEquals(original, decoded.copyOf(decodedLen))
+        }
+    }
+
+    @Test
     fun encodeDoesntWriteExtraBytes() {
         val rng = Random(0xE100)
         repeat(500) {
@@ -552,6 +570,18 @@ class EngineConformanceTest {
                     assertTrue(decodedEstimate - origLen < 3)
                 }
             }
+        }
+    }
+
+    @Test
+    fun estimateViaU128Inflation() {
+        val encodedLengths = (0 until 1000) + ((Int.MAX_VALUE - 1000)..Int.MAX_VALUE)
+
+        for (encodedLen in encodedLengths) {
+            val lenWide = encodedLen.toLong()
+            val estimate = standard().internalDecodedLenEstimate(encodedLen).decodedLenEstimate()
+
+            assertEquals((lenWide + 3L) / 4L * 3L, estimate.toLong())
         }
     }
 

@@ -183,6 +183,16 @@ public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
 
     public fun close(): Result<Unit> = writeFinalLeftovers()
 
+    override fun toString(): String =
+        "EncoderWriter(" +
+            "extraInput=${extraInput.contentToString()}, " +
+            "extraInputOccupiedLen=$extraInputOccupiedLen, " +
+            "outputPrefix=${output.copyOfRange(0, minOf(5, output.size)).contentToString()}, " +
+            "outputOccupiedLen=$outputOccupiedLen" +
+            ")"
+
+    internal fun fmt(): String = toString()
+
     public companion object {
         public fun <C : Config, D : DecodeEstimate, W : ByteWriter> new(
             delegate: W,

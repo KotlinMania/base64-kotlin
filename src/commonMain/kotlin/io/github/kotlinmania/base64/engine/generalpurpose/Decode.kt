@@ -16,6 +16,10 @@ public class GeneralPurposeEstimate internal constructor(
     private val conservativeDecodedLen: Int = (encodedLen / 4 + if (rem > 0) 1 else 0) * 3
 
     override fun decodedLenEstimate(): Int = conservativeDecodedLen
+
+    internal companion object {
+        internal fun new(encodedLen: Int): GeneralPurposeEstimate = GeneralPurposeEstimate(encodedLen)
+    }
 }
 
 internal fun decodeHelper(
