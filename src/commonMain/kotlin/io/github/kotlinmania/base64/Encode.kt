@@ -4,6 +4,48 @@ package io.github.kotlinmania.base64
 import io.github.kotlinmania.base64.engine.Config
 import io.github.kotlinmania.base64.engine.DecodeEstimate
 import io.github.kotlinmania.base64.engine.Engine
+import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD
+
+/**
+ * Encode arbitrary octets as base64 using the standard engine.
+ *
+ * See [Engine.encode].
+ */
+public fun encode(input: ByteArray): String = STANDARD.encode(input)
+
+/**
+ * Encode arbitrary octets as base64 using the provided [Engine] into a new [String].
+ *
+ * See [Engine.encode].
+ */
+public fun <C : Config, D : DecodeEstimate> encodeEngine(
+    input: ByteArray,
+    engine: Engine<C, D>,
+): String = engine.encode(input)
+
+/**
+ * Encode arbitrary octets as base64 into a supplied [StringBuilder].
+ *
+ * See [Engine.encodeString].
+ */
+public fun <C : Config, D : DecodeEstimate> encodeEngineString(
+    input: ByteArray,
+    outputBuf: StringBuilder,
+    engine: Engine<C, D>,
+) {
+    engine.encodeString(input, outputBuf)
+}
+
+/**
+ * Encode arbitrary octets as base64 into a supplied slice.
+ *
+ * See [Engine.encodeSlice].
+ */
+public fun <C : Config, D : DecodeEstimate> encodeEngineSlice(
+    input: ByteArray,
+    outputBuf: ByteArray,
+    engine: Engine<C, D>,
+): Result<Int> = engine.encodeSlice(input, outputBuf)
 
 /**
  * B64-encode and pad (if configured).
@@ -13,9 +55,9 @@ import io.github.kotlinmania.base64.engine.Engine
  *
  * [expectedEncodedSize] is the encoded size calculated for [input].
  *
- * [output] must be of size [expectedEncodedSize].
+ * [output] must be at least [expectedEncodedSize] bytes long.
  *
- * All bytes in [output] will be written to since it is exactly the size of the output.
+ * All bytes in the first [expectedEncodedSize] positions of [output] will be written.
  */
 internal fun <C : Config, D : DecodeEstimate> encodeWithPadding(
     input: ByteArray,
@@ -23,7 +65,7 @@ internal fun <C : Config, D : DecodeEstimate> encodeWithPadding(
     engine: Engine<C, D>,
     expectedEncodedSize: Int,
 ) {
-    check(expectedEncodedSize == output.size)
+    check(expectedEncodedSize <= output.size)
 
     val b64BytesWritten = engine.internalEncode(input, output)
 
