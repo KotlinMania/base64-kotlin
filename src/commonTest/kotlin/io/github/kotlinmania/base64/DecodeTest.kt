@@ -215,6 +215,15 @@ class DecodeTest {
             DecodeError.InvalidPadding,
             DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).cause,
         )
+        assertEquals(null, DecodeSliceError.OutputSliceTooSmall.source())
+        assertEquals(
+            DecodeError.InvalidPadding,
+            DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).source(),
+        )
+        assertEquals(
+            DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding),
+            DecodeSliceError.from(DecodeError.InvalidPadding),
+        )
     }
 
     @Test

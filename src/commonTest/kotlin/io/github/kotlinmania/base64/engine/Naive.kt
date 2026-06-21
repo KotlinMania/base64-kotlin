@@ -123,7 +123,17 @@ internal class Naive(
         }
     }
 
-    private companion object {
+    internal fun decodeByteIntoU32(
+        offset: Int,
+        byte: Byte,
+    ): Result<Int> = decodeByteIntoInt(offset, byte)
+
+    internal companion object {
+        fun new(
+            alphabet: Alphabet,
+            config: NaiveConfig,
+        ): Naive = Naive(alphabet, config)
+
         const val ENCODE_INPUT_CHUNK_SIZE = 3
         const val DECODE_INPUT_CHUNK_SIZE = 4
         const val LOW_SIX_BITS = 0x3F

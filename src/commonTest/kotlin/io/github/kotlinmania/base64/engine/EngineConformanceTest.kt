@@ -3,6 +3,7 @@ package io.github.kotlinmania.base64.engine
 
 import io.github.kotlinmania.base64.DecodeError
 import io.github.kotlinmania.base64.DecodeSliceError
+import io.github.kotlinmania.base64.EncodeSliceError
 import io.github.kotlinmania.base64.PAD_BYTE
 import io.github.kotlinmania.base64.addPadding
 import io.github.kotlinmania.base64.alphabet.Alphabet
@@ -132,6 +133,31 @@ class EngineConformanceTest {
 
             assertEquals(original.size, decodedLen)
             assertContentEquals(original, decoded.copyOf(decodedLen))
+        }
+    }
+
+    @Test
+    fun upstreamEngineTemplatesRunAcrossAllWrappers() {
+        forAllEngines { wrapper ->
+            runRfcVectors(wrapper)
+            runRoundtripRandom(wrapper)
+            runEncodeDoesntWriteExtraBytes(wrapper)
+            runEncodeSliceFitsPrecisely(wrapper)
+            runDecodeDoesntWriteExtraBytes(wrapper)
+            runInvalidLastSymbolChecks(wrapper)
+            runLastQuadInvalidLengthChecks(wrapper)
+            runLastQuadInvalidByteChecks(wrapper)
+            runTrailingBitsForgivingChecks(wrapper)
+            runInvalidByteChecks(wrapper)
+            runPaddingModeChecks(wrapper)
+            runDecodeIntoSlicePreciseChecks(wrapper)
+            runLengthEstimateChecks(wrapper)
+            runCheckedDecodeSliceOutputLengthChecks(wrapper)
+        }
+
+        forAllEnginesExceptDecoderReader { wrapper ->
+            runNoPaddingTrailingByteModeChecks(wrapper)
+            runTooMuchPaddingMalleabilityCheck(wrapper)
         }
     }
 
@@ -542,7 +568,7 @@ class EngineConformanceTest {
                 repeat(4 - (padPosition % 4)) { append('=') }
             }.encodeToByteArray()
             val decoded = ByteArray(padPosition)
-            val result = engine.internalDecode(b64, decoded, engine.internalDecodedLenEstimate(b64.size))
+            val result = engine.internalDecode(b64, decoded)
             if (padPosition % 4 < 2) {
                 assertSliceDecodeError(DecodeError.InvalidByte(padPosition, PAD_BYTE), result)
             } else {
@@ -565,7 +591,7 @@ class EngineConformanceTest {
             for (padding in listOf(true, false)) {
                 for (origLen in 0 until 1000) {
                     val encodedLen = encodedLen(origLen, padding) ?: error("unexpected overflow")
-                    val decodedEstimate = engine.internalDecodedLenEstimate(encodedLen).decodedLenEstimate()
+                    val decodedEstimate = engine.decodedLenEstimate(encodedLen)
                     assertTrue(decodedEstimate >= origLen)
                     assertTrue(decodedEstimate - origLen < 3)
                 }
@@ -579,7 +605,7 @@ class EngineConformanceTest {
 
         for (encodedLen in encodedLengths) {
             val lenWide = encodedLen.toLong()
-            val estimate = standard().internalDecodedLenEstimate(encodedLen).decodedLenEstimate()
+            val estimate = standard().decodedLenEstimate(encodedLen)
 
             assertEquals((lenWide + 3L) / 4L * 3L, estimate.toLong())
         }
@@ -604,7 +630,7 @@ class EngineConformanceTest {
                     assertEquals(
                         DecodeSliceError.OutputSliceTooSmall,
                         engine
-                            .internalDecode(encoded, decodeBuf, engine.internalDecodedLenEstimate(encoded.size))
+                            .internalDecode(encoded, decodeBuf)
                             .exceptionOrNull(),
                     )
                 }
@@ -616,7 +642,7 @@ class EngineConformanceTest {
     }
 
     private fun decodePaddingBeforeFinalNonPaddingCharErrorInvalidByteAtFirstPad(
-        engine: GeneralPurpose,
+        engine: EngineSubject,
         suffixes: List<Pair<String, Int>>,
     ) {
         val rng = Random(0xE104)
@@ -633,7 +659,255 @@ class EngineConformanceTest {
         }
     }
 
-    private fun doInvalidTrailingByte(engine: GeneralPurpose) {
+    private fun runRfcVectors(wrapper: EngineWrapper) {
+        val data =
+            listOf(
+                "" to "",
+                "f" to "Zg==",
+                "fo" to "Zm8=",
+                "foo" to "Zm9v",
+                "foob" to "Zm9vYg==",
+                "fooba" to "Zm9vYmE=",
+                "foobar" to "Zm9vYmFy",
+            )
+        val engine = wrapper.standard()
+        val engineNoPadding = wrapper.standardUnpadded()
+
+        for ((orig, encoded) in data) {
+            val input = orig.bytes()
+            val encodedWithoutPadding = encoded.trimEnd('=')
+            val encodeBuf = ByteArray(8)
+            val encodeLen = engineNoPadding.internalEncode(input, encodeBuf)
+            assertEquals(encodedWithoutPadding, encodeBuf.copyOf(encodeLen).decodeToString())
+            assertContentEquals(
+                input,
+                engineNoPadding.decode(encodedWithoutPadding.bytes()).getOrThrow(),
+            )
+            if (encoded.contains('=')) {
+                assertDecodeError(DecodeError.InvalidPadding, engineNoPadding.decode(encoded.bytes()))
+            }
+
+            val paddedBuf = ByteArray(8)
+            val paddedLen = engine.internalEncode(input, paddedBuf)
+            val padLen = addPadding(paddedLen, paddedBuf, paddedLen)
+            assertContentEquals(encoded.bytes(), paddedBuf.copyOf(paddedLen + padLen))
+            assertContentEquals(input, engine.decode(encoded.bytes()).getOrThrow())
+        }
+    }
+
+    private fun runRoundtripRandom(wrapper: EngineWrapper) {
+        val rng = Random(0xA100)
+        repeat(100) {
+            val engine = wrapper.random(rng)
+            val input = ByteArray(rng.nextInt(1, 1000))
+            rng.nextBytes(input)
+            val encodedSize = encodedLen(input.size, engine.config().encodePadding()) ?: error("unexpected overflow")
+            val encoded = ByteArray(encodedSize)
+            val decoded = ByteArray(input.size)
+
+            val encodedLen = engine.encodeSlice(input, encoded).getOrThrow()
+            val decodedLen = engine.decodeSliceUnchecked(encoded.copyOf(encodedLen), decoded).getOrThrow()
+
+            assertEquals(input.size, decodedLen)
+            assertContentEquals(input, decoded.copyOf(decodedLen))
+        }
+    }
+
+    private fun runEncodeDoesntWriteExtraBytes(wrapper: EngineWrapper) {
+        val rng = Random(0xA101)
+        repeat(100) {
+            val engine = wrapper.random(rng)
+            val input = ByteArray(rng.nextInt(0, 1000))
+            rng.nextBytes(input)
+            val output = ByteArray(1024 + input.size * 2) { rng.nextInt(0, 256).toByte() }
+            val backup = output.copyOf()
+
+            val encodedLenNoPad = engine.internalEncode(input, output)
+            assertEquals(encodedLen(input.size, false), encodedLenNoPad)
+            assertContentEquals(backup.copyOfRange(encodedLenNoPad, backup.size), output.copyOfRange(encodedLenNoPad, output.size))
+            val padLen = if (engine.config().encodePadding()) addPadding(encodedLenNoPad, output, encodedLenNoPad) else 0
+            assertContentEquals(input, engine.decode(output.copyOfRange(0, encodedLenNoPad + padLen)).getOrThrow())
+        }
+    }
+
+    private fun runEncodeSliceFitsPrecisely(wrapper: EngineWrapper) {
+        val rng = Random(0xA102)
+        repeat(100) {
+            val engine = wrapper.random(rng)
+            val input = ByteArray(rng.nextInt(0, 1000))
+            rng.nextBytes(input)
+            val output = ByteArray(encodedLen(input.size, engine.config().encodePadding()) ?: error("unexpected overflow"))
+            assertEquals(output.size, engine.encodeSlice(input, output).getOrThrow())
+            assertContentEquals(input, engine.decode(output).getOrThrow())
+        }
+    }
+
+    private fun runDecodeDoesntWriteExtraBytes(wrapper: EngineWrapper) {
+        val rng = Random(0xA103)
+        repeat(100) {
+            val engine = wrapper.random(rng)
+            val input = ByteArray(rng.nextInt(1, 1000))
+            rng.nextBytes(input)
+            val encoded = engine.encode(input).bytes()
+            val prefixLen = 64
+            val output = ByteArray(prefixLen + input.size + 64) { rng.nextInt(0, 256).toByte() }
+            val backup = output.copyOf()
+            val window = ByteArray(output.size - prefixLen)
+            val decodedLen = engine.decodeSliceUnchecked(encoded, window).getOrThrow()
+            window.copyInto(output, prefixLen, 0, decodedLen)
+
+            assertEquals(input.size, decodedLen)
+            assertContentEquals(input, output.copyOfRange(prefixLen, prefixLen + decodedLen))
+            assertContentEquals(backup.copyOfRange(0, prefixLen), output.copyOfRange(0, prefixLen))
+            assertContentEquals(backup.copyOfRange(prefixLen + decodedLen, backup.size), output.copyOfRange(prefixLen + decodedLen, output.size))
+        }
+    }
+
+    private fun runInvalidLastSymbolChecks(wrapper: EngineWrapper) {
+        val engine = wrapper.standard()
+        assertContentEquals(byteArrayOf(0x89.toByte(), 0x85.toByte()), engine.decode("iYU=".bytes()).getOrThrow())
+        assertContentEquals(byteArrayOf(0xFF.toByte()), engine.decode("/w==".bytes()).getOrThrow())
+        for ((suffix, offset) in listOf("/x==" to 1, "/z==" to 1, "/0==" to 1, "/9==" to 1, "/+==" to 1, "//==" to 1, "iYV=" to 2, "iYW=" to 2, "iYX=" to 2)) {
+            for (prefixQuads in 0..32) {
+                val encoded = prefixedString("AAAA", prefixQuads, suffix)
+                assertDecodeError(DecodeError.InvalidLastSymbol(encoded.length - 4 + offset, suffix.bytes()[offset]), engine.decode(encoded.bytes()))
+            }
+        }
+    }
+
+    private fun runLastQuadInvalidLengthChecks(wrapper: EngineWrapper) {
+        for (len in (0 until 32).map { it * 4 + 1 }) {
+            for (mode in allPadModes()) {
+                val input = MutableList(len) { 'A'.code.toByte() }
+                val engine = wrapper.standardWithPadMode(true, mode)
+                assertDecodeError(DecodeError.InvalidLength(len), engine.decode(input.toByteArray()))
+                repeat(3) {
+                    input.add(PAD_BYTE)
+                    assertDecodeError(DecodeError.InvalidByte(len, PAD_BYTE), engine.decode(input.toByteArray()))
+                }
+            }
+        }
+    }
+
+    private fun runLastQuadInvalidByteChecks(wrapper: EngineWrapper) {
+        for (prefixLen in (0 until 32).map { it * 4 }) {
+            for (mode in allPadModes()) {
+                val input = MutableList(prefixLen) { 'A'.code.toByte() }
+                input.add('*'.code.toByte())
+                val engine = wrapper.standardWithPadMode(true, mode)
+                assertDecodeError(DecodeError.InvalidByte(prefixLen, '*'.code.toByte()), engine.decode(input.toByteArray()))
+            }
+        }
+    }
+
+    private fun runTrailingBitsForgivingChecks(wrapper: EngineWrapper) {
+        val strict = wrapper.standard()
+        val forgiving = wrapper.standardAllowTrailingBits()
+        var prefix = ""
+        repeat(32) {
+            assertTrue(strict.decode((prefix + "/w==").bytes()).isSuccess)
+            assertTrue(strict.decode((prefix + "iYU=").bytes()).isSuccess)
+            assertTolerantDecode(forgiving, prefix, byteArrayOf(255.toByte()), "/x==")
+            assertTolerantDecode(forgiving, prefix, byteArrayOf(137.toByte(), 133.toByte()), "iYV=")
+            prefix += "AAAA"
+        }
+    }
+
+    private fun runInvalidByteChecks(wrapper: EngineWrapper) {
+        val rng = Random(0xA104)
+        repeat(100) {
+            val alphabet = randomAlphabet(rng)
+            val engine = wrapper.randomAlphabet(rng, alphabet)
+            val input = ByteArray(rng.nextInt(1, 1000))
+            rng.nextBytes(input)
+            val encoded = engine.encode(input).bytes()
+            val invalidByte = generateSequence { rng.nextInt(0, 256).toByte() }.first { it !in alphabet.symbols && it != PAD_BYTE }
+            val invalidIndex = rng.nextInt(0, input.size)
+            encoded[invalidIndex] = invalidByte
+            assertDecodeError(DecodeError.InvalidByte(invalidIndex, invalidByte), engine.decodeSliceUnchecked(encoded, ByteArray(input.size)))
+        }
+    }
+
+    private fun runPaddingModeChecks(wrapper: EngineWrapper) {
+        val canonical = wrapper.standardWithPadMode(true, DecodePaddingMode.RequireCanonical)
+        assertAllSuffixesOk(canonical, listOf("/w==", "iYU=", "AAAA"))
+        for (suffix in listOf("/w", "/w=", "iYU")) {
+            assertDecodeError(DecodeError.InvalidPadding, canonical.decode(suffix.bytes()))
+        }
+
+        val noPadding = wrapper.standardWithPadMode(true, DecodePaddingMode.RequireNone)
+        assertAllSuffixesOk(noPadding, listOf("/w", "iYU", "AAAA"))
+        for (suffix in listOf("/w=", "/w==", "iYU=")) {
+            assertDecodeError(DecodeError.InvalidPadding, noPadding.decode(suffix.bytes()))
+        }
+
+        assertAllSuffixesOk(
+            wrapper.standardWithPadMode(true, DecodePaddingMode.Indifferent),
+            listOf("/w", "/w=", "/w==", "iYU", "iYU=", "AAAA"),
+        )
+    }
+
+    private fun runDecodeIntoSlicePreciseChecks(wrapper: EngineWrapper) {
+        val rng = Random(0xA105)
+        repeat(100) {
+            val engine = wrapper.random(rng)
+            val input = ByteArray(rng.nextInt(0, 1000))
+            rng.nextBytes(input)
+            val encoded = engine.encode(input).bytes()
+            val decoded = ByteArray(input.size)
+            assertEquals(input.size, engine.decodeSliceUnchecked(encoded, decoded).getOrThrow())
+            assertContentEquals(input, decoded)
+            decoded.fill(0)
+            assertEquals(input.size, engine.decodeSlice(encoded, decoded).getOrThrow())
+            assertContentEquals(input, decoded)
+        }
+    }
+
+    private fun runLengthEstimateChecks(wrapper: EngineWrapper) {
+        for (engine in listOf(wrapper.standard(), wrapper.standardUnpadded())) {
+            for (padding in listOf(true, false)) {
+                for (origLen in 0 until 1000) {
+                    val encodedLen = encodedLen(origLen, padding) ?: error("unexpected overflow")
+                    val decodedEstimate = engine.decodedLenEstimate(encodedLen)
+                    assertTrue(decodedEstimate >= origLen)
+                    assertTrue(decodedEstimate - origLen < 3)
+                }
+            }
+        }
+    }
+
+    private fun runCheckedDecodeSliceOutputLengthChecks(wrapper: EngineWrapper) {
+        val rng = Random(0xA106)
+        for (originalLen in 0 until 64) {
+            val original = ByteArray(originalLen)
+            rng.nextBytes(original)
+            for (mode in allPadModes()) {
+                val engine = wrapper.standardWithPadMode(mode != DecodePaddingMode.RequireNone, mode)
+                val encoded = engine.encode(original).bytes()
+                for (decodeBufLen in 0 until originalLen) {
+                    val decodeBuf = ByteArray(decodeBufLen)
+                    assertEquals(DecodeSliceError.OutputSliceTooSmall, engine.decodeSlice(encoded, decodeBuf).exceptionOrNull())
+                    assertEquals(DecodeSliceError.OutputSliceTooSmall, engine.internalDecode(encoded, decodeBuf).exceptionOrNull())
+                }
+                val decodeBuf = ByteArray(originalLen)
+                assertEquals(originalLen, engine.decodeSlice(encoded, decodeBuf).getOrThrow())
+                assertContentEquals(original, decodeBuf)
+            }
+        }
+    }
+
+    private fun runNoPaddingTrailingByteModeChecks(wrapper: EngineWrapper) {
+        for (mode in allPadModes()) {
+            doInvalidTrailingByte(wrapper.standardWithPadMode(true, mode))
+            doInvalidTrailingPaddingAsInvalidByteAtFirstPadding(wrapper.standardWithPadMode(true, mode))
+        }
+    }
+
+    private fun runTooMuchPaddingMalleabilityCheck(wrapper: EngineWrapper) {
+        assertDecodeError(DecodeError.InvalidByte(6, PAD_BYTE), wrapper.standard().decode("SGVsbA====".bytes()))
+    }
+
+    private fun doInvalidTrailingByte(engine: EngineSubject) {
         for (lastByte in listOf('*'.code.toByte(), '\n'.code.toByte())) {
             for (numPrefixQuads in 0..255) {
                 val input = prefixedBytes("ABCD", numPrefixQuads, "Cg==").toMutableList()
@@ -643,7 +917,7 @@ class EngineConformanceTest {
         }
     }
 
-    private fun doInvalidTrailingPaddingAsInvalidByteAtFirstPadding(engine: GeneralPurpose) {
+    private fun doInvalidTrailingPaddingAsInvalidByteAtFirstPadding(engine: EngineSubject) {
         for (numPrefixQuads in 0..255) {
             for ((suffix, padOffset) in listOf("AA===" to 2, "AAA==" to 3, "AAAA=" to 4)) {
                 assertDecodeError(
@@ -655,7 +929,7 @@ class EngineConformanceTest {
     }
 
     private fun assertAllSuffixesOk(
-        engine: GeneralPurpose,
+        engine: EngineSubject,
         suffixes: List<String>,
     ) {
         for (numPrefixQuads in 0..255) {
@@ -666,7 +940,7 @@ class EngineConformanceTest {
     }
 
     private fun assertTolerantDecode(
-        engine: GeneralPurpose,
+        engine: EngineSubject,
         prefix: String,
         expected: ByteArray,
         data: String,
@@ -732,37 +1006,49 @@ class EngineConformanceTest {
         return output
     }
 
-    private fun standard(): GeneralPurpose = STANDARD_ENGINE
+    private fun standard(): EngineSubject = GeneralPurposeWrapper.standard()
 
-    private fun standardUnpadded(): GeneralPurpose =
-        GeneralPurpose(
-            STANDARD,
-            GeneralPurposeConfig()
-                .withEncodePadding(false)
-                .withDecodePaddingMode(DecodePaddingMode.RequireNone),
-        )
+    private fun standardUnpadded(): EngineSubject =
+        GeneralPurposeWrapper.standardUnpadded()
 
     private fun standardWithPadMode(
         encodePad: Boolean,
         decodePaddingMode: DecodePaddingMode,
-    ): GeneralPurpose =
-        GeneralPurpose(
-            STANDARD,
-            GeneralPurposeConfig()
-                .withEncodePadding(encodePad)
-                .withDecodePaddingMode(decodePaddingMode),
-        )
+    ): EngineSubject =
+        GeneralPurposeWrapper.standardWithPadMode(encodePad, decodePaddingMode)
 
-    private fun standardAllowTrailingBits(): GeneralPurpose =
-        GeneralPurpose(
-            STANDARD,
-            GeneralPurposeConfig().withDecodeAllowTrailingBits(true),
-        )
+    private fun standardAllowTrailingBits(): EngineSubject =
+        GeneralPurposeWrapper.standardAllowTrailingBits()
 
     private fun randomEngine(
         rng: Random,
         alphabet: Alphabet = randomAlphabet(rng),
-    ): GeneralPurpose = GeneralPurpose(alphabet, randomConfig(rng))
+    ): EngineSubject = GeneralPurposeSubject(GeneralPurpose(alphabet, randomConfig(rng)))
+
+    private fun allEngines(): List<EngineWrapper> =
+        listOf(
+            GeneralPurposeWrapper,
+            NaiveWrapper,
+            DecoderReaderEngineWrapper,
+        )
+
+    private fun allEnginesExceptDecoderReader(): List<EngineWrapper> =
+        listOf(
+            GeneralPurposeWrapper,
+            NaiveWrapper,
+        )
+
+    private fun forAllEngines(block: (EngineWrapper) -> Unit) {
+        for (wrapper in allEngines()) {
+            block(wrapper)
+        }
+    }
+
+    private fun forAllEnginesExceptDecoderReader(block: (EngineWrapper) -> Unit) {
+        for (wrapper in allEnginesExceptDecoderReader()) {
+            block(wrapper)
+        }
+    }
 
     private fun allPadModes(): List<DecodePaddingMode> =
         listOf(
@@ -777,3 +1063,368 @@ class EngineConformanceTest {
             DecodePaddingMode.RequireCanonical,
         )
 }
+
+private interface EngineWrapper {
+    fun standard(): EngineSubject
+
+    fun standardUnpadded(): EngineSubject
+
+    fun standardWithPadMode(
+        encodePad: Boolean,
+        decodePaddingMode: DecodePaddingMode,
+    ): EngineSubject
+
+    fun standardAllowTrailingBits(): EngineSubject
+
+    fun random(rng: Random): EngineSubject =
+        randomAlphabet(rng).let { alphabet -> randomAlphabet(rng, alphabet) }
+
+    fun randomAlphabet(
+        rng: Random,
+        alphabet: Alphabet,
+    ): EngineSubject
+}
+
+private object GeneralPurposeWrapper : EngineWrapper {
+    override fun standard(): EngineSubject =
+        GeneralPurposeSubject(STANDARD_ENGINE)
+
+    override fun standardUnpadded(): EngineSubject =
+        GeneralPurposeSubject(
+            GeneralPurpose(
+                STANDARD,
+                GeneralPurposeConfig()
+                    .withEncodePadding(false)
+                    .withDecodePaddingMode(DecodePaddingMode.RequireNone),
+            ),
+        )
+
+    override fun standardWithPadMode(
+        encodePad: Boolean,
+        decodePaddingMode: DecodePaddingMode,
+    ): EngineSubject =
+        GeneralPurposeSubject(
+            GeneralPurpose(
+                STANDARD,
+                GeneralPurposeConfig()
+                    .withEncodePadding(encodePad)
+                    .withDecodePaddingMode(decodePaddingMode),
+            ),
+        )
+
+    override fun standardAllowTrailingBits(): EngineSubject =
+        GeneralPurposeSubject(
+            GeneralPurpose(
+                STANDARD,
+                GeneralPurposeConfig().withDecodeAllowTrailingBits(true),
+            ),
+        )
+
+    override fun randomAlphabet(
+        rng: Random,
+        alphabet: Alphabet,
+    ): EngineSubject =
+        GeneralPurposeSubject(GeneralPurpose(alphabet, randomConfig(rng)))
+}
+
+private object NaiveWrapper : EngineWrapper {
+    override fun standard(): EngineSubject =
+        NaiveSubject(
+            Naive(
+                STANDARD,
+                NaiveConfig(
+                    shouldEncodePadding = true,
+                    decodeAllowTrailingBits = false,
+                    decodePaddingMode = DecodePaddingMode.RequireCanonical,
+                ),
+            ),
+        )
+
+    override fun standardUnpadded(): EngineSubject =
+        NaiveSubject(
+            Naive(
+                STANDARD,
+                NaiveConfig(
+                    shouldEncodePadding = false,
+                    decodeAllowTrailingBits = false,
+                    decodePaddingMode = DecodePaddingMode.RequireNone,
+                ),
+            ),
+        )
+
+    override fun standardWithPadMode(
+        encodePad: Boolean,
+        decodePaddingMode: DecodePaddingMode,
+    ): EngineSubject =
+        NaiveSubject(
+            Naive(
+                STANDARD,
+                NaiveConfig(
+                    shouldEncodePadding = encodePad,
+                    decodeAllowTrailingBits = false,
+                    decodePaddingMode = decodePaddingMode,
+                ),
+            ),
+        )
+
+    override fun standardAllowTrailingBits(): EngineSubject =
+        NaiveSubject(
+            Naive(
+                STANDARD,
+                NaiveConfig(
+                    shouldEncodePadding = true,
+                    decodeAllowTrailingBits = true,
+                    decodePaddingMode = DecodePaddingMode.RequireCanonical,
+                ),
+            ),
+        )
+
+    override fun randomAlphabet(
+        rng: Random,
+        alphabet: Alphabet,
+    ): EngineSubject {
+        val mode =
+            when (rng.nextInt(3)) {
+                0 -> DecodePaddingMode.Indifferent
+                1 -> DecodePaddingMode.RequireCanonical
+                else -> DecodePaddingMode.RequireNone
+            }
+        return NaiveSubject(
+            Naive(
+                alphabet,
+                NaiveConfig(
+                    shouldEncodePadding =
+                        when (mode) {
+                            DecodePaddingMode.Indifferent -> rng.nextBoolean()
+                            DecodePaddingMode.RequireCanonical -> true
+                            DecodePaddingMode.RequireNone -> false
+                        },
+                    decodeAllowTrailingBits = rng.nextBoolean(),
+                    decodePaddingMode = mode,
+                ),
+            ),
+        )
+    }
+}
+
+private object DecoderReaderEngineWrapper : EngineWrapper {
+    override fun standard(): EngineSubject =
+        DecoderReaderSubject(GeneralPurposeWrapper.standard())
+
+    override fun standardUnpadded(): EngineSubject =
+        DecoderReaderSubject(GeneralPurposeWrapper.standardUnpadded())
+
+    override fun standardWithPadMode(
+        encodePad: Boolean,
+        decodePaddingMode: DecodePaddingMode,
+    ): EngineSubject =
+        DecoderReaderSubject(GeneralPurposeWrapper.standardWithPadMode(encodePad, decodePaddingMode))
+
+    override fun standardAllowTrailingBits(): EngineSubject =
+        DecoderReaderSubject(GeneralPurposeWrapper.standardAllowTrailingBits())
+
+    override fun randomAlphabet(
+        rng: Random,
+        alphabet: Alphabet,
+    ): EngineSubject =
+        DecoderReaderSubject(GeneralPurposeWrapper.randomAlphabet(rng, alphabet))
+}
+
+private interface EngineSubject {
+    fun internalEncode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Int
+
+    fun decodedLenEstimate(inputLen: Int): Int
+
+    fun internalDecode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<DecodeMetadata>
+
+    fun config(): Config
+
+    fun encode(input: ByteArray): String {
+        val encodedSize = encodedLen(input.size, config().encodePadding()) ?: error("unexpected overflow")
+        val output = ByteArray(encodedSize)
+        val bytesWritten = internalEncode(input, output)
+        if (config().encodePadding()) {
+            addPadding(bytesWritten, output, bytesWritten)
+        }
+        return output.decodeToString()
+    }
+
+    fun encodeSlice(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<Int> {
+        val encodedSize = encodedLen(input.size, config().encodePadding()) ?: error("unexpected overflow")
+        if (output.size < encodedSize) {
+            return Result.failure(EncodeSliceError.OutputSliceTooSmall)
+        }
+        val bytesWritten = internalEncode(input, output)
+        if (config().encodePadding()) {
+            addPadding(bytesWritten, output, bytesWritten)
+        }
+        return Result.success(encodedSize)
+    }
+
+    fun encodeString(
+        input: ByteArray,
+        output: StringBuilder,
+    ) {
+        output.append(encode(input))
+    }
+
+    fun decode(input: ByteArray): Result<ByteArray> {
+        val output = ByteArray(decodedLenEstimate(input.size))
+        return internalDecode(input, output)
+            .fold(
+                onSuccess = { Result.success(output.copyOf(it.decodedLen)) },
+                onFailure = {
+                    if (it is DecodeSliceError.DecodeErrorVariant) {
+                        Result.failure(it.error)
+                    } else {
+                        Result.failure(it)
+                    }
+                },
+            )
+    }
+
+    fun decodeSlice(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<Int> =
+        internalDecode(input, output).map { it.decodedLen }
+
+    fun decodeSliceUnchecked(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<Int> =
+        internalDecode(input, output)
+            .fold(
+                onSuccess = { Result.success(it.decodedLen) },
+                onFailure = {
+                    if (it is DecodeSliceError.DecodeErrorVariant) {
+                        Result.failure(it.error)
+                    } else {
+                        Result.failure(it)
+                    }
+                },
+            )
+
+    fun decodeVec(
+        input: ByteArray,
+        output: MutableList<Byte>,
+    ): Result<Unit> =
+        decode(input).map { decoded ->
+            for (byte in decoded) {
+                output.add(byte)
+            }
+        }
+}
+
+private class GeneralPurposeSubject(
+    private val engine: GeneralPurpose,
+) : EngineSubject {
+    override fun internalEncode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Int = engine.internalEncode(input, output)
+
+    override fun decodedLenEstimate(inputLen: Int): Int =
+        engine.internalDecodedLenEstimate(inputLen).decodedLenEstimate()
+
+    override fun internalDecode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<DecodeMetadata> =
+        engine.internalDecode(input, output, engine.internalDecodedLenEstimate(input.size))
+
+    override fun config(): Config = engine.config()
+}
+
+private class NaiveSubject(
+    private val engine: Naive,
+) : EngineSubject {
+    override fun internalEncode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Int = engine.internalEncode(input, output)
+
+    override fun decodedLenEstimate(inputLen: Int): Int =
+        engine.internalDecodedLenEstimate(inputLen).decodedLenEstimate()
+
+    override fun internalDecode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<DecodeMetadata> =
+        engine.internalDecode(input, output, engine.internalDecodedLenEstimate(input.size))
+
+    override fun config(): Config = engine.config()
+}
+
+private class DecoderReaderSubject(
+    private val engine: EngineSubject,
+) : EngineSubject {
+    override fun internalEncode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Int = engine.internalEncode(input, output)
+
+    override fun decodedLenEstimate(inputLen: Int): Int =
+        engine.decodedLenEstimate(inputLen)
+
+    override fun internalDecode(
+        input: ByteArray,
+        output: ByteArray,
+    ): Result<DecodeMetadata> {
+        val reader = DecoderReader(ByteArrayReader(input), engine.asEngine())
+        val buffer = mutableListOf<Byte>()
+        val first = ByteArray(input.size)
+        val firstRead =
+            reader.read(first)
+                .getOrElse { return Result.failure(it.decodeErrorOrNull() ?: it) }
+        for (index in 0 until firstRead) {
+            buffer.add(first[index])
+        }
+        reader.readToEnd(buffer)
+            .getOrElse { return Result.failure(it.decodeErrorOrNull() ?: it) }
+
+        if (output.size < buffer.size) {
+            return Result.failure(DecodeSliceError.OutputSliceTooSmall)
+        }
+        for (index in buffer.indices) {
+            output[index] = buffer[index]
+        }
+        val paddingOffset = input.indexOf(PAD_BYTE).takeIf { it >= 0 }
+        return Result.success(DecodeMetadata.new(buffer.size, paddingOffset))
+    }
+
+    override fun config(): Config = engine.config()
+}
+
+private fun EngineSubject.asEngine(): Engine<Config, DecodeEstimate> =
+    object : Engine<Config, DecodeEstimate> {
+        override fun internalEncode(
+            input: ByteArray,
+            output: ByteArray,
+        ): Int = this@asEngine.internalEncode(input, output)
+
+        override fun internalDecodedLenEstimate(inputLen: Int): DecodeEstimate =
+            object : DecodeEstimate {
+                override fun decodedLenEstimate(): Int =
+                    this@asEngine.decodedLenEstimate(inputLen)
+            }
+
+        override fun internalDecode(
+            input: ByteArray,
+            output: ByteArray,
+            decodeEstimate: DecodeEstimate,
+        ): Result<DecodeMetadata> =
+            this@asEngine.internalDecode(input, output)
+
+        override fun config(): Config =
+            this@asEngine.config()
+    }
