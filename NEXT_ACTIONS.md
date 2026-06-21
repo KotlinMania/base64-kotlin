@@ -5,13 +5,13 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 11/25 (44.0%)
-- **Function parity:** 76/289 matched (target 115) — 26.3%
+- **Function parity:** 77/289 matched (target 118) — 26.6%
 - **Class/type parity:** 21/50 matched (target 38) — 42.0%
-- **Combined symbol parity:** 97/339 matched (target 153) — 28.6%
-- **Average inline-code cosine:** 0.73 (function body across 9 matched files)
+- **Combined symbol parity:** 98/339 matched (target 156) — 28.9%
+- **Average inline-code cosine:** 0.74 (function body across 9 matched files)
 - **Average documentation cosine:** 0.59 (doc text across 9 matched files)
 - **Cheat-zeroed Files:** 2
-- **Critical Issues:** 4 files with <0.60 function similarity
+- **Critical Issues:** 3 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -61,10 +61,10 @@ Every matched file is listed below with function and type symbol parity.
 ### 3. base64.decode
 
 - **Target:** `base64.Decode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.56
+- **Similarity:** 0.63
 - **Dependents:** 0
-- **Priority Score:** 42004.4
-- **Functions:** 14/18 matched (target 24)
+- **Priority Score:** 42003.7
+- **Functions:** 14/18 matched (target 25)
 - **Missing functions:** `fmt`, `source`, `from`, `do_decode_slice_doesnt_clobber_existing_prefix_or_suffix`
 - **Types:** 2/2 matched (target 9)
 - **Missing types:** _none_
@@ -92,24 +92,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
 - **Lint issues:** 2
 
-### 5. base64.encode
-
-- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.70
-- **Dependents:** 0
-- **Priority Score:** 31903.0
-- **Functions:** 15/18 matched (target 21)
-- **Missing functions:** `fmt`, `encoded_size_overflow`, `assert_encoded_length`
-- **Types:** 1/1 matched (target 3)
-- **Missing types:** _none_
-- **Tests:** 8/10 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `encode.rs` vs expected `encode.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:encode.rs` vs expected `encode.rs`
-- **Proposed provenance header:** `// port-lint: source encode.rs` (current: `// port-lint: source encode.rs`)
-- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests encode.rs`)
-- **Lint issues:** 2
-
-### 6. base64.alphabet
+### 5. base64.alphabet
 
 - **Target:** `alphabet.Alphabet [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.66
@@ -124,6 +107,23 @@ Every matched file is listed below with function and type symbol parity.
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `alphabet.rs` vs expected `alphabet.rs`
 - **Proposed provenance header:** `// port-lint: source alphabet.rs` (current: `// port-lint: source alphabet.rs`)
 - **Proposed provenance header:** `// port-lint: source alphabet.rs` (current: `// port-lint: source alphabet.rs`)
+- **Lint issues:** 2
+
+### 6. base64.encode
+
+- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.75
+- **Dependents:** 0
+- **Priority Score:** 21902.5
+- **Functions:** 16/18 matched (target 23)
+- **Missing functions:** `fmt`, `assert_encoded_length`
+- **Types:** 1/1 matched (target 3)
+- **Missing types:** _none_
+- **Tests:** 9/10 matched
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `encode.rs` vs expected `encode.rs`
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:encode.rs` vs expected `encode.rs`
+- **Proposed provenance header:** `// port-lint: source encode.rs` (current: `// port-lint: source encode.rs`)
+- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests encode.rs`)
 - **Lint issues:** 2
 
 ### 7. base64.display
