@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 11/25 (44.0%)
-- **Function parity:** 80/289 matched (target 128) — 27.7%
-- **Class/type parity:** 21/50 matched (target 39) — 42.0%
-- **Combined symbol parity:** 101/339 matched (target 167) — 29.8%
-- **Average inline-code cosine:** 0.76 (function body across 9 matched files)
-- **Average documentation cosine:** 0.59 (doc text across 9 matched files)
+- **Files Present:** 15/25 (60.0%)
+- **Function parity:** 107/285 matched (target 162) — 37.5%
+- **Class/type parity:** 29/50 matched (target 49) — 58.0%
+- **Combined symbol parity:** 136/335 matched (target 211) — 40.6%
+- **Average inline-code cosine:** 0.70 (function body across 13 matched files)
+- **Average documentation cosine:** 0.41 (doc text across 13 matched files)
 - **Cheat-zeroed Files:** 2
-- **Critical Issues:** 3 files with <0.60 function similarity
+- **Critical Issues:** 7 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -75,7 +75,21 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests decode.rs` (current: `// port-lint: tests decode.rs`)
 - **Lint issues:** 2
 
-### 4. base64.alphabet
+### 4. engine.naive
+
+- **Target:** `engine.Naive [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.51
+- **Dependents:** 0
+- **Priority Score:** 41304.9
+- **Functions:** 6/8 matched (target 9)
+- **Missing functions:** `new`, `decode_byte_into_u32`
+- **Types:** 3/5 matched (target 3)
+- **Missing types:** `Config`, `DecodeEstimate`
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/naive.rs` vs expected `engine/naive.rs`
+- **Proposed provenance header:** `// port-lint: source engine/naive.rs` (current: `// port-lint: source engine/naive.rs`)
+- **Lint issues:** 1
+
+### 5. base64.alphabet
 
 - **Target:** `alphabet.Alphabet [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.66
@@ -92,7 +106,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source alphabet.rs` (current: `// port-lint: source alphabet.rs`)
 - **Lint issues:** 2
 
-### 5. base64.encode
+### 6. base64.encode
 
 - **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.75
@@ -111,7 +125,21 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests tests/encode.rs`)
 - **Lint issues:** 3
 
-### 6. base64.display
+### 7. write.encoder
+
+- **Target:** `write.EncoderWriter [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.58
+- **Dependents:** 0
+- **Priority Score:** 21104.2
+- **Functions:** 8/10 matched (target 9)
+- **Missing functions:** `fmt`, `drop`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `write/encoder.rs` vs expected `write/encoder.rs`
+- **Proposed provenance header:** `// port-lint: source write/encoder.rs` (current: `// port-lint: source write/encoder.rs`)
+- **Lint issues:** 1
+
+### 8. base64.display
 
 - **Target:** `base64.Display [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.68
@@ -128,7 +156,21 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: tests display.rs` (current: `// port-lint: tests display.rs`)
 - **Lint issues:** 2
 
-### 7. engine.mod
+### 9. read.decoder
+
+- **Target:** `read.DecoderReader [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.54
+- **Dependents:** 0
+- **Priority Score:** 20804.6
+- **Functions:** 5/7 matched (target 6)
+- **Missing functions:** `fmt`, `new`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `read/decoder.rs` vs expected `read/decoder.rs`
+- **Proposed provenance header:** `// port-lint: source read/decoder.rs` (current: `// port-lint: source read/decoder.rs`)
+- **Lint issues:** 1
+
+### 10. engine.mod
 
 - **Target:** `engine.Mod [STUB] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
@@ -142,7 +184,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source engine/mod.rs` (current: `// port-lint: source engine/mod.rs`)
 - **Lint issues:** 1
 
-### 8. general_purpose.decode
+### 11. general_purpose.decode
 
 - **Target:** `generalpurpose.Decode [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.59
@@ -159,7 +201,24 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
 - **Lint issues:** 2
 
-### 9. general_purpose.decode_suffix
+### 12. write.encoder_string_writer
+
+- **Target:** `write.EncoderStringWriter [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.56
+- **Dependents:** 0
+- **Priority Score:** 1104.4
+- **Functions:** 8/8 matched (target 10)
+- **Missing functions:** _none_
+- **Types:** 3/3 matched (target 5)
+- **Missing types:** _none_
+- **Tests:** 2/2 matched
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `write/encoder_string_writer.rs` vs expected `write/encoder_string_writer.rs`
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:write/encoder_string_writer.rs` vs expected `write/encoder_string_writer.rs`
+- **Proposed provenance header:** `// port-lint: source write/encoder_string_writer.rs` (current: `// port-lint: source write/encoder_string_writer.rs`)
+- **Proposed provenance header:** `// port-lint: tests write/encoder_string_writer.rs` (current: `// port-lint: tests write/encoder_string_writer.rs`)
+- **Lint issues:** 2
+
+### 13. general_purpose.decode_suffix
 
 - **Target:** `generalpurpose.DecodeSuffix [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.81
@@ -173,7 +232,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode_suffix.rs` (current: `// port-lint: source engine/general_purpose/decode_suffix.rs`)
 - **Lint issues:** 1
 
-### 10. base64.lib
+### 14. base64.lib
 
 - **Target:** `base64.Lib [PROVENANCE-FALLBACK]`
 - **Similarity:** 1.00
@@ -187,7 +246,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source lib.rs` (current: `// port-lint: source lib.rs`)
 - **Lint issues:** 1
 
-### 11. base64.prelude
+### 15. base64.prelude
 
 - **Target:** `prelude.Prelude [PROVENANCE-FALLBACK]`
 - **Similarity:** 1.00
