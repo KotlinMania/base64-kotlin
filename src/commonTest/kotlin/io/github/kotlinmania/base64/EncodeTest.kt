@@ -2,8 +2,10 @@
 package io.github.kotlinmania.base64
 
 import io.github.kotlinmania.base64.alphabet.IMAP_MUTF7
+import io.github.kotlinmania.base64.engine.Config
 import io.github.kotlinmania.base64.engine.Engine
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
+import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD
@@ -13,6 +15,8 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
+private const val RANDOM_TRIALS: Int = 10_000
 
 class EncodeTest {
     @Test
@@ -66,121 +70,249 @@ class EncodeTest {
     }
 
     @Test
+    fun encodedSizeOverflow() {
+        assertEquals(null, encodedLen(Int.MAX_VALUE, true))
+    }
+
+    @Test
     fun encodeEngineStringIntoNonemptyBufferDoesntClobberPrefix() {
+        val origData = mutableListOf<Byte>()
+        val prefix = StringBuilder()
+        val encodedDataNoPrefix = StringBuilder()
+        val encodedDataWithPrefix = StringBuilder()
+        val decoded = mutableListOf<Byte>()
+
         val random = Random(0xE11C0DE)
 
-        repeat(512) {
-            val input = randomBytes(random, random.nextInt(0, 1000))
-            val prefix = "#".repeat(random.nextInt(0, 1000))
-            val encodedDataNoPrefix = StringBuilder()
-            val encodedDataWithPrefix = StringBuilder(prefix)
-            val decoded = mutableListOf<Byte>()
+        repeat(RANDOM_TRIALS) {
+            origData.clear()
+            prefix.clear()
+            encodedDataNoPrefix.clear()
+            encodedDataWithPrefix.clear()
+            decoded.clear()
+
+            val inputLen = random.nextInt(0, 1000)
+
+            repeat(inputLen) {
+                origData.add(randomByte(random))
+            }
+
+            val prefixLen = random.nextInt(0, 1000)
+            repeat(prefixLen) {
+                // getting convenient random single-byte printable chars that aren't base64 is
+                // annoying
+                prefix.append('#')
+            }
+            encodedDataWithPrefix.append(prefix)
+
             val engine = randomEngine(random)
+            engine.encodeString(origData.toByteArray(), encodedDataNoPrefix)
+            engine.encodeString(origData.toByteArray(), encodedDataWithPrefix)
 
-            engine.encodeString(input, encodedDataNoPrefix)
-            engine.encodeString(input, encodedDataWithPrefix)
-
-            assertEquals(encodedDataNoPrefix.length + prefix.length, encodedDataWithPrefix.length)
-            assertEncodeSanity(encodedDataNoPrefix.toString(), engine.config().encodePadding(), input.size)
+            assertEquals(
+                encodedDataNoPrefix.length + prefixLen,
+                encodedDataWithPrefix.length,
+            )
             assertEncodeSanity(
-                encodedDataWithPrefix.substring(prefix.length),
+                encodedDataNoPrefix.toString(),
                 engine.config().encodePadding(),
-                input.size,
+                inputLen,
+            )
+            assertEncodeSanity(
+                encodedDataWithPrefix.substring(prefixLen),
+                engine.config().encodePadding(),
+                inputLen,
             )
 
-            assertEquals(prefix + encodedDataNoPrefix.toString(), encodedDataWithPrefix.toString())
+            // append plain encode onto prefix
+            prefix.append(encodedDataNoPrefix)
 
-            engine.decodeVec(encodedDataNoPrefix.toString().encodeToByteArray(), decoded).getOrThrow()
-            assertContentEquals(input, decoded.toByteArray())
+            assertEquals(prefix.toString(), encodedDataWithPrefix.toString())
+
+            engine
+                .decodeVec(encodedDataNoPrefix.toString().encodeToByteArray(), decoded)
+                .getOrThrow()
+            assertContentEquals(origData.toByteArray(), decoded.toByteArray())
         }
     }
 
     @Test
     fun encodeEngineSliceIntoNonemptyBufferDoesntClobberSuffix() {
+        val origData = mutableListOf<Byte>()
+        var encodedData = ByteArray(0)
+        var encodedDataOriginalState = ByteArray(0)
+        val decoded = mutableListOf<Byte>()
+
         val random = Random(0x51CE)
 
-        repeat(512) {
-            val input = randomBytes(random, random.nextInt(0, 1000))
-            val encodedData = randomBytes(random, 10 * input.size + 16)
-            val encodedDataOriginalState = encodedData.copyOf()
-            val decoded = mutableListOf<Byte>()
-            val engine = randomEngine(random)
-            val encodedSize = encodedLen(input.size, engine.config().encodePadding())!!
+        repeat(RANDOM_TRIALS) {
+            origData.clear()
+            encodedData = ByteArray(0)
+            encodedDataOriginalState = ByteArray(0)
+            decoded.clear()
 
-            assertEquals(encodedSize, engine.encodeSlice(input, encodedData).getOrThrow())
+            val inputLen = random.nextInt(0, 1000)
+
+            repeat(inputLen) {
+                origData.add(randomByte(random))
+            }
+
+            // plenty of existing garbage in the encoded buffer
+            encodedData = ByteArray(10 * inputLen).also { random.nextBytes(it) }
+
+            encodedDataOriginalState = encodedData.copyOf()
+
+            val engine = randomEngine(random)
+
+            val encodedSize = encodedLen(inputLen, engine.config().encodePadding())!!
+
+            assertEquals(
+                encodedSize,
+                engine.encodeSlice(origData.toByteArray(), encodedData).getOrThrow(),
+            )
+
             assertEncodeSanity(
                 encodedData.copyOfRange(0, encodedSize).decodeToString(),
                 engine.config().encodePadding(),
-                input.size,
+                inputLen,
             )
+
             assertContentEquals(
                 encodedDataOriginalState.copyOfRange(encodedSize, encodedDataOriginalState.size),
                 encodedData.copyOfRange(encodedSize, encodedData.size),
             )
 
-            engine.decodeVec(encodedData.copyOfRange(0, encodedSize), decoded).getOrThrow()
-            assertContentEquals(input, decoded.toByteArray())
+            engine
+                .decodeVec(encodedData.copyOfRange(0, encodedSize), decoded)
+                .getOrThrow()
+            assertContentEquals(origData.toByteArray(), decoded.toByteArray())
         }
     }
 
     @Test
     fun encodeToSliceRandomValidUtf8() {
+        val input = mutableListOf<Byte>()
+        var output = ByteArray(0)
+
         val random = Random(0x70511CE)
 
-        repeat(512) {
-            val input = randomBytes(random, random.nextInt(0, 1000))
+        repeat(RANDOM_TRIALS) {
+            input.clear()
+            output = ByteArray(0)
+
+            val inputLen = random.nextInt(0, 1000)
+
+            repeat(inputLen) {
+                input.add(randomByte(random))
+            }
+
+            val config = randomConfig(random)
             val engine = randomEngine(random)
-            val encodedSize = encodedLen(input.size, engine.config().encodePadding())!!
-            val output = randomBytes(random, encodedSize)
-            val originalOutput = output.copyOf()
 
-            val bytesWritten = engine.internalEncode(input, output)
+            // fill up the output buffer with garbage
+            val encodedSize = encodedLen(inputLen, config.encodePadding())!!
+            output = ByteArray(encodedSize).also { random.nextBytes(it) }
 
+            val origOutputBuf = output.copyOf()
+
+            val bytesWritten = engine.internalEncode(input.toByteArray(), output)
+
+            // make sure the part beyond bytesWritten is the same garbage it was before
             assertContentEquals(
-                originalOutput.copyOfRange(bytesWritten, originalOutput.size),
+                origOutputBuf.copyOfRange(bytesWritten, origOutputBuf.size),
                 output.copyOfRange(bytesWritten, output.size),
             )
+
+            // make sure the encoded bytes are UTF-8
             output.copyOfRange(0, bytesWritten).decodeToString()
         }
     }
 
     @Test
     fun encodeWithPaddingRandomValidUtf8() {
+        val input = mutableListOf<Byte>()
+        var output = ByteArray(0)
+
         val random = Random(0x0DA7A)
 
-        repeat(512) {
-            val input = randomBytes(random, random.nextInt(0, 1000))
+        repeat(RANDOM_TRIALS) {
+            input.clear()
+            output = ByteArray(0)
+
+            val inputLen = random.nextInt(0, 1000)
+
+            repeat(inputLen) {
+                input.add(randomByte(random))
+            }
+
             val engine = randomEngine(random)
-            val encodedSize = encodedLen(input.size, engine.config().encodePadding())!!
-            val output = randomBytes(random, encodedSize + 1000)
-            val originalOutput = output.copyOf()
 
-            encodeWithPadding(input, output, engine, encodedSize)
+            // fill up the output buffer with garbage
+            val encodedSize = encodedLen(inputLen, engine.config().encodePadding())!!
+            output = ByteArray(encodedSize + 1000).also { random.nextBytes(it) }
 
+            val origOutputBuf = output.copyOf()
+
+            encodeWithPadding(input.toByteArray(), output, engine, encodedSize)
+
+            // make sure the part beyond b64 is the same garbage it was before
             assertContentEquals(
-                originalOutput.copyOfRange(encodedSize, originalOutput.size),
+                origOutputBuf.copyOfRange(encodedSize, origOutputBuf.size),
                 output.copyOfRange(encodedSize, output.size),
             )
+
+            // make sure the encoded bytes are UTF-8
             output.copyOfRange(0, encodedSize).decodeToString()
         }
     }
 
     @Test
     fun addPaddingRandomValidUtf8() {
+        var output = ByteArray(0)
+
         val random = Random(0x0AD)
 
+        // cover our bases for length % 4
         for (unpaddedOutputLen in 0 until 20) {
-            val output = randomBytes(random, 100)
-            val originalOutput = output.copyOf()
+            output = ByteArray(0)
+
+            // fill output with random
+            output = ByteArray(100).also { random.nextBytes(it) }
+
+            val origOutputBuf = output.copyOf()
 
             val bytesWritten = addPadding(unpaddedOutputLen, output)
 
+            // make sure the part beyond bytesWritten is the same garbage it was before
             assertContentEquals(
-                originalOutput.copyOfRange(bytesWritten, originalOutput.size),
+                origOutputBuf.copyOfRange(bytesWritten, origOutputBuf.size),
                 output.copyOfRange(bytesWritten, output.size),
             )
+
+            // make sure the encoded bytes are UTF-8
             output.copyOfRange(0, bytesWritten).decodeToString()
         }
+    }
+
+    private fun assertEncodedLength(
+        inputLen: Int,
+        encLen: Int,
+        engine: Engine<*, *>,
+        padded: Boolean,
+    ) {
+        assertEquals(encLen, encodedLen(inputLen, padded))
+
+        val bytes = mutableListOf<Byte>()
+        val random = Random(inputLen)
+
+        repeat(inputLen) {
+            bytes.add(randomByte(random))
+        }
+
+        val encoded = engine.encode(bytes.toByteArray())
+        assertEncodeSanity(encoded, padded, inputLen)
+
+        assertEquals(encLen, encoded.length)
     }
 
     @Test
@@ -192,34 +324,6 @@ class EncodeTest {
                 .map { if (it == '/') ',' else it }
                 .joinToString(""),
         )
-    }
-
-    @Test
-    fun deprecatedFns() {
-        assertEquals("Zm9v", encode("foo".encodeToByteArray()))
-        assertEquals("Zm9v", encodeEngine("foo".encodeToByteArray(), STANDARD))
-        val output = StringBuilder()
-        encodeEngineString("foo".encodeToByteArray(), output, STANDARD)
-        assertEquals("Zm9v", output.toString())
-
-        val outputSlice = ByteArray(4)
-        assertEquals(4, encodeEngineSlice("foo".encodeToByteArray(), outputSlice, STANDARD).getOrThrow())
-        assertEquals("Zm9v", outputSlice.decodeToString())
-    }
-
-    private fun assertEncodedLength(
-        inputLen: Int,
-        encLen: Int,
-        engine: Engine<*, *>,
-        padded: Boolean,
-    ) {
-        assertEquals(encLen, encodedLen(inputLen, padded))
-
-        val bytes = randomBytes(Random(inputLen), inputLen)
-        val encoded = engine.encode(bytes)
-        assertEncodeSanity(encoded, padded, inputLen)
-
-        assertEquals(encLen, encoded.length)
     }
 
     private fun assertEncodeSanity(
@@ -236,6 +340,12 @@ class EncodeTest {
         }
     }
 
+    private fun randomConfig(random: Random): Config =
+        when (random.nextInt(2)) {
+            0 -> PAD
+            else -> NO_PAD
+        }
+
     private fun randomEngine(random: Random): GeneralPurpose =
         when (random.nextInt(4)) {
             0 -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.STANDARD, PAD)
@@ -244,8 +354,5 @@ class EncodeTest {
             else -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, NO_PAD)
         }
 
-    private fun randomBytes(
-        random: Random,
-        size: Int,
-    ): ByteArray = ByteArray(size).also { random.nextBytes(it) }
+    private fun randomByte(random: Random): Byte = ByteArray(1).also { random.nextBytes(it) }[0]
 }
