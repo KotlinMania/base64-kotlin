@@ -39,6 +39,11 @@ public class ChunkedEncoder<C : Config, D : DecodeEstimate>(
 
         return Result.success(Unit)
     }
+
+    public companion object {
+        public fun <C : Config, D : DecodeEstimate> new(engine: Engine<C, D>): ChunkedEncoder<C, D> =
+            ChunkedEncoder(engine)
+    }
 }
 
 // A really simple sink that just appends to a string
@@ -49,5 +54,9 @@ internal class StringSink(
         string.append(encoded.decodeToString())
 
         return Result.success(Unit)
+    }
+
+    companion object {
+        fun new(string: StringBuilder): StringSink = StringSink(string)
     }
 }
