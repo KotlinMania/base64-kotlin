@@ -43,6 +43,53 @@ class GeneralPurposeTest {
     }
 
     @Test
+    fun decodeChunk8WritesOnly6Bytes() {
+        val input = "Zm9vYmFy".encodeToByteArray()
+        val output = byteArrayOf(0, 1, 2, 3, 4, 5, 6, 7)
+
+        val error = decodeChunk8(input, 0, STANDARD.decodeTable, output, 0)
+
+        assertEquals(null, error)
+        assertContentEquals(
+            byteArrayOf(
+                'f'.code.toByte(),
+                'o'.code.toByte(),
+                'o'.code.toByte(),
+                'b'.code.toByte(),
+                'a'.code.toByte(),
+                'r'.code.toByte(),
+                6,
+                7,
+            ),
+            output,
+        )
+    }
+
+    @Test
+    fun decodeChunk4WritesOnly3Bytes() {
+        val input = "Zm9v".encodeToByteArray()
+        val output = byteArrayOf(0, 1, 2, 3)
+
+        val error = decodeChunk4(input, 0, STANDARD.decodeTable, output, 0)
+
+        assertEquals(null, error)
+        assertContentEquals(
+            byteArrayOf('f'.code.toByte(), 'o'.code.toByte(), 'o'.code.toByte(), 3),
+            output,
+        )
+    }
+
+    @Test
+    fun estimateViaU128Inflation() {
+        for (encodedLen in (0 until 1000) + ((Int.MAX_VALUE - 1000)..Int.MAX_VALUE)) {
+            val lenWide = encodedLen.toLong()
+            val estimate = GeneralPurposeEstimate(encodedLen)
+
+            assertEquals((lenWide + 3L) / 4L * 3L, estimate.decodedLenEstimate().toLong())
+        }
+    }
+
+    @Test
     fun rejectsNonCanonicalTrailingBits() {
         val failure = STANDARD.decode("/x==".encodeToByteArray()).exceptionOrNull()
 

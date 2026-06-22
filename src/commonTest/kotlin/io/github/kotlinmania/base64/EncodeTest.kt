@@ -326,6 +326,20 @@ class EncodeTest {
         )
     }
 
+    @Test
+    fun deprecatedFns() {
+        assertEquals("Zm9v", encode("foo".encodeToByteArray()))
+        assertEquals("Zm9v", encodeEngine("foo".encodeToByteArray(), STANDARD))
+
+        val output = StringBuilder()
+        encodeEngineString("foo".encodeToByteArray(), output, STANDARD)
+        assertEquals("Zm9v", output.toString())
+
+        val outputSlice = ByteArray(4)
+        assertEquals(4, encodeEngineSlice("foo".encodeToByteArray(), outputSlice, STANDARD).getOrThrow())
+        assertEquals("Zm9v", outputSlice.decodeToString())
+    }
+
     private fun assertEncodeSanity(
         encoded: String,
         padded: Boolean,

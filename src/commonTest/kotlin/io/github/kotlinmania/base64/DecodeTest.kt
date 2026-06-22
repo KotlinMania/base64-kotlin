@@ -169,7 +169,7 @@ class DecodeTest {
             val offset = 1000
 
             // decode into the non-empty buf
-            // Unported: shared-backing mutable subslice `decode_buf[offset..]` has no faithful ByteArray view.
+            // Unported: shared-backing mutable slice starting at a nonzero offset has no faithful ByteArray view.
             val decodeBytesWritten =
                 callDecode(engine, encodedData.toString().encodeToByteArray(), decodeBuf)
 
@@ -214,6 +214,15 @@ class DecodeTest {
         assertEquals(
             DecodeError.InvalidPadding,
             DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).cause,
+        )
+        assertEquals(null, DecodeSliceError.OutputSliceTooSmall.source())
+        assertEquals(
+            DecodeError.InvalidPadding,
+            DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).source(),
+        )
+        assertEquals(
+            DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding),
+            DecodeSliceError.from(DecodeError.InvalidPadding),
         )
     }
 

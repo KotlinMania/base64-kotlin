@@ -21,14 +21,65 @@ public class GeneralPurpose(
     alphabet: Alphabet,
     private val config: GeneralPurposeConfig,
 ) : Engine<GeneralPurposeConfig, GeneralPurposeEstimate> {
-    private val encodeTable: ByteArray = makeEncodeTable(alphabet)
-    internal val decodeTable: IntArray = makeDecodeTable(alphabet)
+    private val encodeTable: ByteArray = encodeTable(alphabet)
+    internal val decodeTable: IntArray = decodeTable(alphabet)
 
     override fun internalEncode(input: ByteArray, output: ByteArray): Int {
         var inputIndex = 0
         var outputIndex = 0
+        val lastFastIndex = (input.size - (BLOCKS_PER_FAST_LOOP * 6 + 2)).coerceAtLeast(0)
 
-        while (inputIndex + 3 <= input.size) {
+        if (lastFastIndex > 0) {
+            while (inputIndex <= lastFastIndex) {
+                var inputU64 = readU64(input, inputIndex)
+                output[outputIndex] = encodeTable[((inputU64 ushr 58) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 1] = encodeTable[((inputU64 ushr 52) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 2] = encodeTable[((inputU64 ushr 46) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 3] = encodeTable[((inputU64 ushr 40) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 4] = encodeTable[((inputU64 ushr 34) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 5] = encodeTable[((inputU64 ushr 28) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 6] = encodeTable[((inputU64 ushr 22) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 7] = encodeTable[((inputU64 ushr 16) and LOW_SIX_BITS_LONG).toInt()]
+
+                inputU64 = readU64(input, inputIndex + 6)
+                output[outputIndex + 8] = encodeTable[((inputU64 ushr 58) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 9] = encodeTable[((inputU64 ushr 52) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 10] = encodeTable[((inputU64 ushr 46) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 11] = encodeTable[((inputU64 ushr 40) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 12] = encodeTable[((inputU64 ushr 34) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 13] = encodeTable[((inputU64 ushr 28) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 14] = encodeTable[((inputU64 ushr 22) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 15] = encodeTable[((inputU64 ushr 16) and LOW_SIX_BITS_LONG).toInt()]
+
+                inputU64 = readU64(input, inputIndex + 12)
+                output[outputIndex + 16] = encodeTable[((inputU64 ushr 58) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 17] = encodeTable[((inputU64 ushr 52) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 18] = encodeTable[((inputU64 ushr 46) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 19] = encodeTable[((inputU64 ushr 40) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 20] = encodeTable[((inputU64 ushr 34) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 21] = encodeTable[((inputU64 ushr 28) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 22] = encodeTable[((inputU64 ushr 22) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 23] = encodeTable[((inputU64 ushr 16) and LOW_SIX_BITS_LONG).toInt()]
+
+                inputU64 = readU64(input, inputIndex + 18)
+                output[outputIndex + 24] = encodeTable[((inputU64 ushr 58) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 25] = encodeTable[((inputU64 ushr 52) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 26] = encodeTable[((inputU64 ushr 46) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 27] = encodeTable[((inputU64 ushr 40) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 28] = encodeTable[((inputU64 ushr 34) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 29] = encodeTable[((inputU64 ushr 28) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 30] = encodeTable[((inputU64 ushr 22) and LOW_SIX_BITS_LONG).toInt()]
+                output[outputIndex + 31] = encodeTable[((inputU64 ushr 16) and LOW_SIX_BITS_LONG).toInt()]
+
+                inputIndex += BLOCKS_PER_FAST_LOOP * 6
+                outputIndex += BLOCKS_PER_FAST_LOOP * 8
+            }
+        }
+
+        val rem = input.size % 3
+        val startOfRem = input.size - rem
+
+        while (inputIndex < startOfRem) {
             val b0 = input[inputIndex].unsigned()
             val b1 = input[inputIndex + 1].unsigned()
             val b2 = input[inputIndex + 2].unsigned()
@@ -83,6 +134,14 @@ public class GeneralPurpose(
         )
 
     override fun config(): GeneralPurposeConfig = config
+
+    public companion object {
+        /** Create a [GeneralPurpose] engine from an [Alphabet]. */
+        public fun new(
+            alphabet: Alphabet,
+            config: GeneralPurposeConfig,
+        ): GeneralPurpose = GeneralPurpose(alphabet, config)
+    }
 }
 
 /** Contains configuration parameters for base64 encoding and decoding. */
@@ -91,6 +150,17 @@ public class GeneralPurposeConfig(
     internal val decodeAllowTrailingBits: Boolean = false,
     internal val decodePaddingMode: DecodePaddingMode = DecodePaddingMode.RequireCanonical,
 ) : Config {
+    public companion object {
+        /**
+         * Create a new config with padding enabled, trailing bits rejected, and canonical
+         * padding required while decoding.
+         */
+        public fun new(): GeneralPurposeConfig = GeneralPurposeConfig()
+
+        /** Create the default config. */
+        public fun default(): GeneralPurposeConfig = new()
+    }
+
     /**
      * Create a new config based on this one with an updated padding setting.
      */
@@ -168,8 +238,10 @@ public val URL_SAFE: GeneralPurpose = GeneralPurpose(URL_SAFE_ALPHABET, PAD)
 public val URL_SAFE_NO_PAD: GeneralPurpose = GeneralPurpose(URL_SAFE_ALPHABET, NO_PAD)
 
 private const val LOW_SIX_BITS: Int = 0x3F
+private const val LOW_SIX_BITS_LONG: Long = 0x3F
+private const val BLOCKS_PER_FAST_LOOP: Int = 4
 
-private fun makeEncodeTable(alphabet: Alphabet): ByteArray {
+internal fun encodeTable(alphabet: Alphabet): ByteArray {
     val encodeTable = ByteArray(64)
     var index = 0
     while (index < 64) {
@@ -179,7 +251,7 @@ private fun makeEncodeTable(alphabet: Alphabet): ByteArray {
     return encodeTable
 }
 
-private fun makeDecodeTable(alphabet: Alphabet): IntArray {
+internal fun decodeTable(alphabet: Alphabet): IntArray {
     val decodeTable = IntArray(256) { INVALID_VALUE }
     var index = 0
     while (index < 64) {
@@ -187,6 +259,17 @@ private fun makeDecodeTable(alphabet: Alphabet): IntArray {
         index += 1
     }
     return decodeTable
+}
+
+private fun readU64(
+    bytes: ByteArray,
+    offset: Int,
+): Long {
+    var value = 0L
+    for (index in 0 until 8) {
+        value = (value shl 8) or bytes[offset + index].unsigned().toLong()
+    }
+    return value
 }
 
 internal fun Byte.unsigned(): Int = toInt() and 0xFF

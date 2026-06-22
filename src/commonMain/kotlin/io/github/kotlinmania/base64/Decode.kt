@@ -59,6 +59,8 @@ public sealed class DecodeError : Exception() {
     }
 
     override fun toString(): String = message ?: super.toString()
+
+    internal fun fmt(): String = toString()
 }
 
 /** Errors that can occur while decoding into a slice. */
@@ -79,9 +81,17 @@ public sealed class DecodeSliceError : Exception() {
 
     override fun toString(): String = message ?: super.toString()
 
+    public fun source(): DecodeError? =
+        (this as? DecodeErrorVariant)?.error
+
+    internal fun fmt(): String = toString()
+
     public companion object {
         /** Lift a [DecodeError] into a [DecodeSliceError]. */
         public fun fromDecodeError(e: DecodeError): DecodeSliceError = DecodeErrorVariant(e)
+
+        /** Lift a [DecodeError] into a [DecodeSliceError]. */
+        public fun from(e: DecodeError): DecodeSliceError = fromDecodeError(e)
     }
 }
 
