@@ -57,7 +57,8 @@ public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
     private fun writeToDelegate(currentOutputLen: Int): Result<Unit> {
         val writer = delegate ?: throw IllegalStateException("Writer must be present")
         val consumed =
-            writer.write(output, 0, currentOutputLen)
+            writer
+                .write(output, 0, currentOutputLen)
                 .getOrElse { return Result.failure(it) }
 
         require(consumed in 0..currentOutputLen)

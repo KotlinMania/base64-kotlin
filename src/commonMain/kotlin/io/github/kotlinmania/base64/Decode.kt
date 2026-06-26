@@ -22,6 +22,7 @@ public sealed class DecodeError : Exception() {
         val byte: Byte,
     ) : DecodeError() {
         override val message: String get() = "Invalid symbol $byte, offset $index."
+
         override fun toString(): String = message
     }
 
@@ -33,6 +34,7 @@ public sealed class DecodeError : Exception() {
         val len: Int,
     ) : DecodeError() {
         override val message: String get() = "Invalid input length: $len"
+
         override fun toString(): String = message
     }
 
@@ -47,6 +49,7 @@ public sealed class DecodeError : Exception() {
         val byte: Byte,
     ) : DecodeError() {
         override val message: String get() = "Invalid last symbol $byte, offset $index."
+
         override fun toString(): String = message
     }
 
@@ -71,6 +74,7 @@ public sealed class DecodeSliceError : Exception() {
     ) : DecodeSliceError() {
         override val message: String get() = "DecodeError: $error"
         override val cause: Throwable get() = error
+
         override fun toString(): String = message
     }
 
