@@ -31,8 +31,7 @@ internal fun randomConfig(rng: Random): GeneralPurposeConfig {
                 DecodePaddingMode.RequireCanonical -> true
                 DecodePaddingMode.RequireNone -> false
             },
-        )
-        .withDecodePaddingMode(mode)
+        ).withDecodePaddingMode(mode)
         .withDecodeAllowTrailingBits(rng.nextBoolean())
 }
 
@@ -59,9 +58,10 @@ internal fun ByteReader.readToEnd(output: MutableList<Byte>): Result<Int> {
 internal fun ByteWriter.writeAll(buffer: ByteArray): Result<Unit> {
     var consumed = 0
     while (consumed < buffer.size) {
-        val written = write(buffer, consumed, buffer.size - consumed).getOrElse {
-            return Result.failure(it)
-        }
+        val written =
+            write(buffer, consumed, buffer.size - consumed).getOrElse {
+                return Result.failure(it)
+            }
         consumed += written
     }
     return Result.success(Unit)
