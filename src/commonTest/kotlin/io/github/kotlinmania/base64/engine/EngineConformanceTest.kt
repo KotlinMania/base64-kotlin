@@ -565,10 +565,11 @@ class EngineConformanceTest {
     fun innerDecodeReportsPaddingPosition() {
         val engine = standard()
         for (padPosition in 1 until 2_000) {
-            val b64 = buildString {
-                repeat(padPosition) { append('A') }
-                repeat(4 - (padPosition % 4)) { append('=') }
-            }.encodeToByteArray()
+            val b64 =
+                buildString {
+                    repeat(padPosition) { append('A') }
+                    repeat(4 - (padPosition % 4)) { append('=') }
+                }.encodeToByteArray()
             val decoded = ByteArray(padPosition)
             val result = engine.internalDecode(b64, decoded)
             if (padPosition % 4 < 2) {
@@ -1151,7 +1152,6 @@ class EngineConformanceTest {
             '+'.code.toByte(),
             '/'.code.toByte(),
         )
-
 }
 
 private interface EngineWrapper {
@@ -1474,12 +1474,14 @@ private class DecoderReaderSubject(
         val buffer = mutableListOf<Byte>()
         val first = ByteArray(input.size)
         val firstRead =
-            reader.read(first)
+            reader
+                .read(first)
                 .getOrElse { return Result.failure(it.decodeErrorOrNull() ?: it) }
         for (index in 0 until firstRead) {
             buffer.add(first[index])
         }
-        reader.readToEnd(buffer)
+        reader
+            .readToEnd(buffer)
             .getOrElse { return Result.failure(it.decodeErrorOrNull() ?: it) }
 
         if (output.size < buffer.size) {

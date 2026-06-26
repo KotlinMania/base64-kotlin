@@ -1,7 +1,6 @@
 // port-lint: tests write/encoder_tests.rs
 package io.github.kotlinmania.base64.write
 
-import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
 import io.github.kotlinmania.base64.alphabet.URL_SAFE
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
@@ -16,6 +15,7 @@ import io.github.kotlinmania.base64.writeAll
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
 
 class EncoderWriterTest {
     @Test

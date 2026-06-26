@@ -1,7 +1,6 @@
 // port-lint: tests decode.rs
 package io.github.kotlinmania.base64
 
-import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
 import io.github.kotlinmania.base64.engine.DecodePaddingMode
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig
@@ -14,6 +13,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
 
 private const val DECODE_RANDOM_TRIALS: Int = 10_000
 
@@ -192,10 +192,10 @@ class DecodeTest {
         assertEquals(
             "Invalid symbol 0, offset 0. Invalid input length: 0 Invalid last symbol 0, offset 0. Invalid padding",
             listOf(
-            DecodeError.InvalidByte(0, 0).toString(),
-            DecodeError.InvalidLength(0).toString(),
-            DecodeError.InvalidLastSymbol(0, 0).toString(),
-            DecodeError.InvalidPadding.toString(),
+                DecodeError.InvalidByte(0, 0).toString(),
+                DecodeError.InvalidLength(0).toString(),
+                DecodeError.InvalidLastSymbol(0, 0).toString(),
+                DecodeError.InvalidPadding.toString(),
             ).joinToString(" "),
         )
     }
@@ -206,8 +206,8 @@ class DecodeTest {
         assertEquals(
             "Output slice too small DecodeError: Invalid padding",
             listOf(
-            DecodeSliceError.OutputSliceTooSmall.toString(),
-            DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).toString(),
+                DecodeSliceError.OutputSliceTooSmall.toString(),
+                DecodeSliceError.DecodeErrorVariant(DecodeError.InvalidPadding).toString(),
             ).joinToString(" "),
         )
         assertEquals(null, DecodeSliceError.OutputSliceTooSmall.cause)
@@ -236,17 +236,17 @@ class DecodeTest {
         assertEquals(
             Unit,
             decodeEngineVec(
-            byteArrayOf(),
-            mutableListOf(),
-            io.github.kotlinmania.base64.prelude.BASE64_STANDARD,
+                byteArrayOf(),
+                mutableListOf(),
+                io.github.kotlinmania.base64.prelude.BASE64_STANDARD,
             ).getOrThrow(),
         )
         assertEquals(
             0,
             decodeEngineSlice(
-            byteArrayOf(),
-            ByteArray(0),
-            io.github.kotlinmania.base64.prelude.BASE64_STANDARD,
+                byteArrayOf(),
+                ByteArray(0),
+                io.github.kotlinmania.base64.prelude.BASE64_STANDARD,
             ).getOrThrow(),
         )
     }

@@ -80,12 +80,16 @@ internal class Naive(
                 decodeByteIntoInt(inputIndex, input[inputIndex]).getOrElse {
                     return Result.failure(DecodeSliceError.fromDecodeError(it as DecodeError))
                 } shl 18 or
-                    (decodeByteIntoInt(inputIndex + 1, input[inputIndex + 1]).getOrElse {
-                        return Result.failure(DecodeSliceError.fromDecodeError(it as DecodeError))
-                    } shl 12) or
-                    (decodeByteIntoInt(inputIndex + 2, input[inputIndex + 2]).getOrElse {
-                        return Result.failure(DecodeSliceError.fromDecodeError(it as DecodeError))
-                    } shl 6) or
+                    (
+                        decodeByteIntoInt(inputIndex + 1, input[inputIndex + 1]).getOrElse {
+                            return Result.failure(DecodeSliceError.fromDecodeError(it as DecodeError))
+                        } shl 12
+                    ) or
+                    (
+                        decodeByteIntoInt(inputIndex + 2, input[inputIndex + 2]).getOrElse {
+                            return Result.failure(DecodeSliceError.fromDecodeError(it as DecodeError))
+                        } shl 6
+                    ) or
                     decodeByteIntoInt(inputIndex + 3, input[inputIndex + 3]).getOrElse {
                         return Result.failure(DecodeSliceError.fromDecodeError(it as DecodeError))
                     }

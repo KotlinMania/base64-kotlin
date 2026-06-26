@@ -84,8 +84,7 @@ class CoreTest {
                     DecodePaddingMode.RequireCanonical -> true
                     DecodePaddingMode.RequireNone -> false
                 },
-            )
-            .withDecodePaddingMode(mode)
+            ).withDecodePaddingMode(mode)
             .withDecodeAllowTrailingBits(rng.nextBoolean())
     }
 

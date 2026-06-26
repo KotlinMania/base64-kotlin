@@ -5,7 +5,6 @@ import io.github.kotlinmania.base64.alphabet.IMAP_MUTF7
 import io.github.kotlinmania.base64.engine.Config
 import io.github.kotlinmania.base64.engine.Engine
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
-import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD

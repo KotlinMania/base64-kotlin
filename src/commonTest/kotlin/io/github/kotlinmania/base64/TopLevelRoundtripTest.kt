@@ -1,7 +1,6 @@
 // port-lint: tests tests/tests.rs
 package io.github.kotlinmania.base64
 
-import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
 import io.github.kotlinmania.base64.engine.Engine
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
@@ -11,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
 
 class TopLevelRoundtripTest {
     private fun roundtripRandom(

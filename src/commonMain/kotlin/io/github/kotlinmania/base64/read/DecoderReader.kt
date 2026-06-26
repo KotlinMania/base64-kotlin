@@ -43,7 +43,8 @@ public class DecoderReader<C : Config, D : DecodeEstimate, R : ByteReader>(
 
     private fun readFromDelegate(): Result<Int> {
         val readOffset = b64Offset + b64Len
-        return inner.read(b64Buffer, readOffset, DECODER_BUF_SIZE - readOffset)
+        return inner
+            .read(b64Buffer, readOffset, DECODER_BUF_SIZE - readOffset)
             .onSuccess { read -> b64Len += read }
     }
 
@@ -67,8 +68,7 @@ public class DecoderReader<C : Config, D : DecodeEstimate, R : ByteReader>(
                     b64ToDecode,
                     target,
                     engine.internalDecodedLenEstimate(b64LenToDecode),
-                )
-                .getOrElse { error ->
+                ).getOrElse { error ->
                     val decodeError =
                         when (error) {
                             is DecodeSliceError.DecodeErrorVariant ->
