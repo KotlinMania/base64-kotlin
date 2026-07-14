@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@js-joda/core@6.0.1":
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/@js-joda/core/-/core-6.0.1.tgz#372b56137a0345333b12c6801ee48edd7435ef34"
-  integrity sha512-Iev3Cfa3MC+06JXXeFzSLew/7yeCXLMhjesyH/BD4EQYlUUDV49Ln3s8hd7p5XK5UesO/dO3K1LFJ7RT7v0Ddg==
+"@js-joda/core@6.1.0":
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/@js-joda/core/-/core-6.1.0.tgz#ed88d02cee56b49b86083467db48b84e5c0aa8de"
+  integrity sha512-H8NTMRDJqad/leyv/D/A3kSOsf5/58Ydj4DJGDyaCWk9OU/zuZOLhndVffJgQjsgrn5GC0znHMHie7TfvPPG4w==
