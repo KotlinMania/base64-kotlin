@@ -1,4 +1,4 @@
-// port-lint: tests tests/encode.rs
+// port-lint: tests encode.rs
 package io.github.kotlinmania.base64
 
 import io.github.kotlinmania.base64.alphabet.URL_SAFE
