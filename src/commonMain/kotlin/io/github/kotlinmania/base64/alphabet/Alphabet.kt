@@ -51,6 +51,9 @@ class Alphabet internal constructor(
      */
     fun asString(): String = symbols.decodeToString()
 
+    /** Create a String from the symbols in the [Alphabet]. */
+    fun asStr(): String = asString()
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Alphabet) return false
@@ -60,6 +63,8 @@ class Alphabet internal constructor(
     override fun hashCode(): Int = symbols.contentHashCode()
 
     override fun toString(): String = "Alphabet { symbols: ${asString()} }"
+
+    internal fun fmt(): String = toString()
 
     companion object {
         /**
@@ -249,7 +254,7 @@ sealed class ParseAlphabetError(
     ) : ParseAlphabetError("Reserved byte: ${formatPaddedHex(b)}")
 }
 
-// Format a byte the way Rust's `{:#04x}` does: lowercase hex, two digits, leading `0x`.
+// Format a byte as lowercase hex with two digits and a leading 0x.
 private fun formatPaddedHex(b: Byte): String {
     val unsigned = b.toInt() and 0xFF
     return "0x" + unsigned.toString(16).padStart(2, '0')

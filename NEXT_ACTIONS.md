@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 11/25 (44.0%)
-- **Function parity:** 76/289 matched (target 115) — 26.3%
-- **Class/type parity:** 21/50 matched (target 38) — 42.0%
-- **Combined symbol parity:** 97/339 matched (target 153) — 28.6%
-- **Average inline-code cosine:** 0.73 (function body across 9 matched files)
-- **Average documentation cosine:** 0.59 (doc text across 9 matched files)
+- **Files Present:** 15/21 (71.4%)
+- **Function parity:** 124/253 matched (target 181) — 49.0%
+- **Class/type parity:** 29/48 matched (target 49) — 60.4%
+- **Combined symbol parity:** 153/301 matched (target 230) — 50.8%
+- **Average inline-code cosine:** 0.73 (function body across 13 matched files)
+- **Average documentation cosine:** 0.44 (doc text across 13 matched files)
 - **Cheat-zeroed Files:** 2
-- **Critical Issues:** 4 files with <0.60 function similarity
+- **Critical Issues:** 3 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -27,9 +27,9 @@ No missing high-value files detected.
 
 Every matched file is listed below with function and type symbol parity.
 
-### 1. base64.chunked_encoder
+### 1. chunked_encoder
 
-- **Target:** `base64.ChunkedEncoder [PROVENANCE-FALLBACK]`
+- **Target:** `base64.ChunkedEncoder`
 - **Similarity:** 0.73
 - **Dependents:** 2
 - **Priority Score:** 2041702.8
@@ -38,97 +38,32 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 5/6 matched
 - **Missing types:** `Error`
 - **Tests:** 5/8 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `chunked_encoder.rs` vs expected `chunked_encoder.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:chunked_encoder.rs` vs expected `chunked_encoder.rs`
-- **Proposed provenance header:** `// port-lint: source chunked_encoder.rs` (current: `// port-lint: source chunked_encoder.rs`)
-- **Proposed provenance header:** `// port-lint: tests chunked_encoder.rs` (current: `// port-lint: tests chunked_encoder.rs`)
-- **Lint issues:** 2
 
 ### 2. general_purpose.mod
 
-- **Target:** `generalpurpose.GeneralPurpose [STUB] [PROVENANCE-FALLBACK]`
+- **Target:** `generalpurpose.GeneralPurpose [STUB]`
 - **Similarity:** 0.00
 - **Dependents:** 0
-- **Priority Score:** 71710.0
-- **Functions:** 8/13 matched (target 14)
-- **Missing functions:** `new`, `encode_table`, `decode_table`, `read_u64`, `default`
+- **Priority Score:** 21710.0
+- **Functions:** 13/13 matched (target 18)
+- **Missing functions:** _none_
 - **Types:** 2/4 matched (target 2)
 - **Missing types:** `Config`, `DecodeEstimate`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/mod.rs` vs expected `engine/general_purpose/mod.rs`
-- **Proposed provenance header:** `// port-lint: source engine/general_purpose/mod.rs` (current: `// port-lint: source engine/general_purpose/mod.rs`)
-- **Lint issues:** 1
 
-### 3. base64.decode
+### 3. engine.naive
 
-- **Target:** `base64.Decode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.56
+- **Target:** `engine.Naive`
+- **Similarity:** 0.67
 - **Dependents:** 0
-- **Priority Score:** 42004.4
-- **Functions:** 14/18 matched (target 24)
-- **Missing functions:** `fmt`, `source`, `from`, `do_decode_slice_doesnt_clobber_existing_prefix_or_suffix`
-- **Types:** 2/2 matched (target 9)
-- **Missing types:** _none_
-- **Tests:** 9/10 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `decode.rs` vs expected `decode.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:decode.rs` vs expected `decode.rs`
-- **Proposed provenance header:** `// port-lint: source decode.rs` (current: `// port-lint: source decode.rs`)
-- **Proposed provenance header:** `// port-lint: tests decode.rs` (current: `// port-lint: tests decode.rs`)
-- **Lint issues:** 2
+- **Priority Score:** 21303.3
+- **Functions:** 8/8 matched (target 11)
+- **Missing functions:** _none_
+- **Types:** 3/5 matched (target 3)
+- **Missing types:** `Config`, `DecodeEstimate`
 
-### 4. general_purpose.decode
+### 4. display
 
-- **Target:** `generalpurpose.Decode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.42
-- **Dependents:** 0
-- **Priority Score:** 41105.8
-- **Functions:** 6/10 matched (target 9)
-- **Missing functions:** `new`, `decode_chunk_8_writes_only_6_bytes`, `decode_chunk_4_writes_only_3_bytes`, `estimate_via_u128_inflation`
-- **Types:** 1/1 matched (target 2)
-- **Missing types:** _none_
-- **Tests:** 1/4 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode.rs` vs expected `engine/general_purpose/decode.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode.rs` vs expected `engine/general_purpose/decode.rs`
-- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
-- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode.rs` (current: `// port-lint: source engine/general_purpose/decode.rs`)
-- **Lint issues:** 2
-
-### 5. base64.encode
-
-- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.70
-- **Dependents:** 0
-- **Priority Score:** 31903.0
-- **Functions:** 15/18 matched (target 21)
-- **Missing functions:** `fmt`, `encoded_size_overflow`, `assert_encoded_length`
-- **Types:** 1/1 matched (target 3)
-- **Missing types:** _none_
-- **Tests:** 8/10 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `encode.rs` vs expected `encode.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:encode.rs` vs expected `encode.rs`
-- **Proposed provenance header:** `// port-lint: source encode.rs` (current: `// port-lint: source encode.rs`)
-- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests encode.rs`)
-- **Lint issues:** 2
-
-### 6. base64.alphabet
-
-- **Target:** `alphabet.Alphabet [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.66
-- **Dependents:** 0
-- **Priority Score:** 31603.4
-- **Functions:** 11/13 matched (target 16)
-- **Missing functions:** `as_str`, `fmt`
-- **Types:** 2/3 matched (target 7)
-- **Missing types:** `Error`
-- **Tests:** 8/8 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `alphabet.rs` vs expected `alphabet.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `alphabet.rs` vs expected `alphabet.rs`
-- **Proposed provenance header:** `// port-lint: source alphabet.rs` (current: `// port-lint: source alphabet.rs`)
-- **Proposed provenance header:** `// port-lint: source alphabet.rs` (current: `// port-lint: source alphabet.rs`)
-- **Lint issues:** 2
-
-### 7. base64.display
-
-- **Target:** `base64.Display [PROVENANCE-FALLBACK]`
+- **Target:** `base64.Display`
 - **Similarity:** 0.68
 - **Dependents:** 0
 - **Priority Score:** 21003.2
@@ -137,15 +72,49 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 3/4 matched
 - **Missing types:** `Error`
 - **Tests:** 2/3 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `display.rs` vs expected `display.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `tests:display.rs` vs expected `display.rs`
-- **Proposed provenance header:** `// port-lint: source display.rs` (current: `// port-lint: source display.rs`)
-- **Proposed provenance header:** `// port-lint: tests display.rs` (current: `// port-lint: tests display.rs`)
-- **Lint issues:** 2
+
+### 5. decode
+
+- **Target:** `base64.Decode`
+- **Similarity:** 0.70
+- **Dependents:** 0
+- **Priority Score:** 12003.0
+- **Functions:** 17/18 matched (target 29)
+- **Missing functions:** `do_decode_slice_doesnt_clobber_existing_prefix_or_suffix`
+- **Types:** 2/2 matched (target 9)
+- **Missing types:** _none_
+- **Tests:** 9/10 matched
+
+### 6. encode
+
+- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.76
+- **Dependents:** 0
+- **Priority Score:** 11902.4
+- **Functions:** 17/18 matched (target 31)
+- **Missing functions:** `assert_encoded_length`
+- **Types:** 1/1 matched (target 4)
+- **Missing types:** _none_
+- **Tests:** 9/10 matched
+- **Provenance warning:** port-lint provenance header matched only by basename: `tests:tests/encode.rs` vs expected `encode.rs`
+- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests tests/encode.rs`)
+- **Lint issues:** 1
+
+### 7. alphabet
+
+- **Target:** `alphabet.Alphabet`
+- **Similarity:** 0.69
+- **Dependents:** 0
+- **Priority Score:** 11603.1
+- **Functions:** 13/13 matched (target 18)
+- **Missing functions:** _none_
+- **Types:** 2/3 matched (target 7)
+- **Missing types:** `Error`
+- **Tests:** 8/8 matched
 
 ### 8. engine.mod
 
-- **Target:** `engine.Mod [STUB] [PROVENANCE-FALLBACK]`
+- **Target:** `engine.Mod [STUB]`
 - **Similarity:** 0.00
 - **Dependents:** 0
 - **Priority Score:** 11410.0
@@ -153,13 +122,56 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing functions:** `inner`
 - **Types:** 5/5 matched
 - **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/mod.rs` vs expected `engine/mod.rs`
-- **Proposed provenance header:** `// port-lint: source engine/mod.rs` (current: `// port-lint: source engine/mod.rs`)
-- **Lint issues:** 1
 
-### 9. general_purpose.decode_suffix
+### 9. write.encoder
 
-- **Target:** `generalpurpose.DecodeSuffix [PROVENANCE-FALLBACK]`
+- **Target:** `write.EncoderWriter`
+- **Similarity:** 0.60
+- **Dependents:** 0
+- **Priority Score:** 11104.0
+- **Functions:** 9/10 matched (target 11)
+- **Missing functions:** `drop`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 10. write.encoder_string_writer
+
+- **Target:** `write.EncoderStringWriter`
+- **Similarity:** 0.56
+- **Dependents:** 0
+- **Priority Score:** 1104.4
+- **Functions:** 8/8 matched (target 10)
+- **Missing functions:** _none_
+- **Types:** 3/3 matched (target 5)
+- **Missing types:** _none_
+- **Tests:** 2/2 matched
+
+### 11. general_purpose.decode
+
+- **Target:** `generalpurpose.Decode`
+- **Similarity:** 0.66
+- **Dependents:** 0
+- **Priority Score:** 1103.4
+- **Functions:** 10/10 matched (target 13)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 2)
+- **Missing types:** _none_
+- **Tests:** 4/4 matched
+
+### 12. read.decoder
+
+- **Target:** `read.DecoderReader`
+- **Similarity:** 0.64
+- **Dependents:** 0
+- **Priority Score:** 803.6
+- **Functions:** 7/7 matched (target 9)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 13. general_purpose.decode_suffix
+
+- **Target:** `generalpurpose.DecodeSuffix`
 - **Similarity:** 0.81
 - **Dependents:** 0
 - **Priority Score:** 101.9
@@ -167,13 +179,10 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing functions:** _none_
 - **Types:** 0/0 matched
 - **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `engine/general_purpose/decode_suffix.rs` vs expected `engine/general_purpose/decode_suffix.rs`
-- **Proposed provenance header:** `// port-lint: source engine/general_purpose/decode_suffix.rs` (current: `// port-lint: source engine/general_purpose/decode_suffix.rs`)
-- **Lint issues:** 1
 
-### 10. base64.lib
+### 14. lib
 
-- **Target:** `base64.Lib [PROVENANCE-FALLBACK]`
+- **Target:** `base64.Lib`
 - **Similarity:** 1.00
 - **Dependents:** 0
 - **Priority Score:** 0.0
@@ -181,13 +190,10 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing functions:** _none_
 - **Types:** 0/0 matched
 - **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `lib.rs` vs expected `lib.rs`
-- **Proposed provenance header:** `// port-lint: source lib.rs` (current: `// port-lint: source lib.rs`)
-- **Lint issues:** 1
 
-### 11. base64.prelude
+### 15. prelude
 
-- **Target:** `prelude.Prelude [PROVENANCE-FALLBACK]`
+- **Target:** `prelude.Prelude`
 - **Similarity:** 1.00
 - **Dependents:** 0
 - **Priority Score:** 0.0
@@ -195,9 +201,6 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing functions:** _none_
 - **Types:** 0/0 matched
 - **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `prelude.rs` vs expected `prelude.rs`
-- **Proposed provenance header:** `// port-lint: source prelude.rs` (current: `// port-lint: source prelude.rs`)
-- **Lint issues:** 1
 
 ## Success Criteria
 
@@ -219,6 +222,6 @@ do not treat them as the next implementation target by default.
 
 | Source | Expected target | Deps | Source path | Expected path |
 |--------|-----------------|------|-------------|---------------|
-| `read.mod` | `base64.src.read.Mod` | 0 | `base64/src/read/mod.rs` | `base64/src/read/Mod.kt` |
-| `write.mod` | `base64.src.write.Mod` | 0 | `base64/src/write/mod.rs` | `base64/src/write/Mod.kt` |
+| `read.mod` | `read.Mod` | 0 | `read/mod.rs` | `read/Mod.kt` |
+| `write.mod` | `write.Mod` | 0 | `write/mod.rs` | `write/Mod.kt` |
 

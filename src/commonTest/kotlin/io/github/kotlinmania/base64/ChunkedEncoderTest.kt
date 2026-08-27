@@ -1,8 +1,6 @@
 // port-lint: tests chunked_encoder.rs
 package io.github.kotlinmania.base64
 
-import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
-import io.github.kotlinmania.base64.alphabet.URL_SAFE as URL_SAFE_ALPHABET
 import io.github.kotlinmania.base64.engine.Config
 import io.github.kotlinmania.base64.engine.DecodeEstimate
 import io.github.kotlinmania.base64.engine.Engine
@@ -13,6 +11,8 @@ import io.github.kotlinmania.base64.engine.generalpurpose.PAD
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
+import io.github.kotlinmania.base64.alphabet.URL_SAFE as URL_SAFE_ALPHABET
 
 class ChunkedEncoderTest {
     @Test
