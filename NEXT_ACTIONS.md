@@ -87,7 +87,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 6. encode
 
-- **Target:** `base64.Encode [PROVENANCE-FALLBACK]`
+- **Target:** `base64.Encode`
 - **Similarity:** 0.76
 - **Dependents:** 0
 - **Priority Score:** 11902.4
@@ -96,9 +96,6 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 4)
 - **Missing types:** _none_
 - **Tests:** 9/10 matched
-- **Provenance warning:** port-lint provenance header matched only by basename: `tests:tests/encode.rs` vs expected `encode.rs`
-- **Proposed provenance header:** `// port-lint: tests encode.rs` (current: `// port-lint: tests tests/encode.rs`)
-- **Lint issues:** 1
 
 ### 7. alphabet
 
