@@ -71,11 +71,17 @@ public class DecoderReader<C : Config, D : DecodeEstimate, R : ByteReader>(
                 ).getOrElse { error ->
                     val decodeError =
                         when (error) {
-                            is DecodeSliceError.DecodeErrorVariant ->
+                            is DecodeSliceError.DecodeErrorVariant -> {
                                 adjustDecodeError(error.error)
-                            DecodeSliceError.OutputSliceTooSmall ->
+                            }
+
+                            DecodeSliceError.OutputSliceTooSmall -> {
                                 throw IllegalStateException("buffer is sized correctly")
-                            else -> error
+                            }
+
+                            else -> {
+                                error
+                            }
                         }
                     return Result.failure(
                         StreamError(StreamErrorKind.InvalidData, decodeError.toString(), decodeError),
@@ -104,20 +110,26 @@ public class DecoderReader<C : Config, D : DecodeEstimate, R : ByteReader>(
 
     private fun adjustDecodeError(error: DecodeError): DecodeError =
         when (error) {
-            is DecodeError.InvalidByte ->
-                if (error.byte == PAD_BYTE && paddingOffset != null) {
-                    DecodeError.InvalidByte(paddingOffset ?: error.index, PAD_BYTE)
+            is DecodeError.InvalidByte -> {
+                val currentPaddingOffset = paddingOffset
+                if (error.byte == PAD_BYTE && currentPaddingOffset != null) {
+                    DecodeError.InvalidByte(currentPaddingOffset, PAD_BYTE)
                 } else {
                     DecodeError.InvalidByte(inputConsumedLen + error.index, error.byte)
                 }
+            }
 
-            is DecodeError.InvalidLength ->
+            is DecodeError.InvalidLength -> {
                 DecodeError.InvalidLength(inputConsumedLen + error.len)
+            }
 
-            is DecodeError.InvalidLastSymbol ->
+            is DecodeError.InvalidLastSymbol -> {
                 DecodeError.InvalidLastSymbol(inputConsumedLen + error.index, error.byte)
+            }
 
-            DecodeError.InvalidPadding -> DecodeError.InvalidPadding
+            DecodeError.InvalidPadding -> {
+                DecodeError.InvalidPadding
+            }
         }
 
     override fun read(

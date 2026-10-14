@@ -110,6 +110,7 @@ public fun encodedLen(bytesLen: Int, padding: Boolean): Int? {
             val encodedRem =
                 when (rem) {
                     1 -> 2
+
                     // only other possible remainder is 2
                     else -> 3
                 }

@@ -272,17 +272,30 @@ class DecodeTest {
 
     private fun randomEngine(random: Random): GeneralPurpose =
         when (random.nextInt(5)) {
-            0 -> GeneralPurpose(STANDARD_ALPHABET, PAD)
-            1 -> GeneralPurpose(STANDARD_ALPHABET, NO_PAD)
-            2 -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, PAD)
-            3 -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, NO_PAD)
-            else ->
+            0 -> {
+                GeneralPurpose(STANDARD_ALPHABET, PAD)
+            }
+
+            1 -> {
+                GeneralPurpose(STANDARD_ALPHABET, NO_PAD)
+            }
+
+            2 -> {
+                GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, PAD)
+            }
+
+            3 -> {
+                GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, NO_PAD)
+            }
+
+            else -> {
                 GeneralPurpose(
                     STANDARD_ALPHABET,
                     GeneralPurposeConfig()
                         .withEncodePadding(false)
                         .withDecodePaddingMode(DecodePaddingMode.Indifferent),
                 )
+            }
         }
 
     private fun randomByte(random: Random): Byte = ByteArray(1).also { random.nextBytes(it) }[0]
