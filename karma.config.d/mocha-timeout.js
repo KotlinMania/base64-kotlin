@@ -10,5 +10,17 @@ config.set({
       ...(client.mocha || {}),
       timeout: 120000
     }
-  }
+  },
+  customLaunchers: {
+    ChromeHeadlessMemory: {
+      base: 'ChromeHeadless',
+      flags: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--js-flags=--max-old-space-size=4096'
+      ]
+    }
+  },
+  browsers: ['ChromeHeadlessMemory']
 });

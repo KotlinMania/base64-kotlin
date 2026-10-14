@@ -447,6 +447,7 @@ kotlin {
             testTask {
                 useMocha {
                     timeout = "120s"
+                    nodeJsArgs += listOf("--max-old-space-size=4096")
                 }
             }
         }
