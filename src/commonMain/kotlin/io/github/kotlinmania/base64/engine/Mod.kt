@@ -214,10 +214,17 @@ public interface Engine<C : Config, D : DecodeEstimate> {
                 onSuccess = { dm -> Result.success(buffer.copyOf(dm.decodedLen)) },
                 onFailure = { e ->
                     when (e) {
-                        is DecodeSliceError.DecodeErrorVariant -> Result.failure(e.error)
-                        is DecodeSliceError.OutputSliceTooSmall ->
+                        is DecodeSliceError.DecodeErrorVariant -> {
+                            Result.failure(e.error)
+                        }
+
+                        is DecodeSliceError.OutputSliceTooSmall -> {
                             throw IllegalStateException("ByteArray is sized conservatively")
-                        else -> Result.failure(e)
+                        }
+
+                        else -> {
+                            Result.failure(e)
+                        }
                     }
                 },
             )
@@ -274,10 +281,17 @@ public interface Engine<C : Config, D : DecodeEstimate> {
                 },
                 onFailure = { e ->
                     when (e) {
-                        is DecodeSliceError.DecodeErrorVariant -> Result.failure(e.error)
-                        is DecodeSliceError.OutputSliceTooSmall ->
+                        is DecodeSliceError.DecodeErrorVariant -> {
+                            Result.failure(e.error)
+                        }
+
+                        is DecodeSliceError.OutputSliceTooSmall -> {
                             throw IllegalStateException("ByteArray is sized conservatively")
-                        else -> Result.failure(e)
+                        }
+
+                        else -> {
+                            Result.failure(e)
+                        }
                     }
                 },
             )
@@ -330,10 +344,17 @@ public interface Engine<C : Config, D : DecodeEstimate> {
             onSuccess = { Result.success(it.decodedLen) },
             onFailure = { e ->
                 when (e) {
-                    is DecodeSliceError.DecodeErrorVariant -> Result.failure(e.error)
-                    is DecodeSliceError.OutputSliceTooSmall ->
+                    is DecodeSliceError.DecodeErrorVariant -> {
+                        Result.failure(e.error)
+                    }
+
+                    is DecodeSliceError.OutputSliceTooSmall -> {
                         throw IllegalStateException("Output slice is too small")
-                    else -> Result.failure(e)
+                    }
+
+                    else -> {
+                        Result.failure(e)
+                    }
                 }
             },
         )

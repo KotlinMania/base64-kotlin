@@ -74,7 +74,9 @@ internal fun decodeSuffix(
     }
 
     when (paddingMode) {
-        DecodePaddingMode.Indifferent -> Unit
+        DecodePaddingMode.Indifferent -> {
+        }
+
         DecodePaddingMode.RequireCanonical -> {
             if ((paddingBytesCount + morselsInLeftover) % 4 != 0) {
                 return Result.failure(DecodeSliceError.fromDecodeError(DecodeError.InvalidPadding))
