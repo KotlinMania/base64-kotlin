@@ -12,7 +12,8 @@ import io.github.kotlinmania.base64.io.StreamError
 import io.github.kotlinmania.base64.io.StreamErrorKind
 import io.github.kotlinmania.base64.randomEngine
 import io.github.kotlinmania.base64.writeAll
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
@@ -187,12 +188,12 @@ class EncoderWriterTest {
 
     @Test
     fun everyPossibleSplitOfInput() {
-        val rng = Random(0xE001)
+        val rng = SmallRng.seedFromU64(0xE001uL)
         val size = 500
 
         for (i in 0 until size) {
             val origData = ByteArray(size)
-            rng.nextBytes(origData)
+            rng.fillBytes(origData)
             val streamEncoded = MutableByteArrayWriter()
             val engine = randomEngine(rng)
             val normalEncoded = engine.encode(origData)
@@ -218,22 +219,22 @@ class EncoderWriterTest {
 
     @Test
     fun retryingWritesThatErrorWithInterruptedWorks() {
-        val rng = Random(0xE002)
+        val rng = SmallRng.seedFromU64(0xE002uL)
 
         repeat(20) {
-            val origLen = rng.nextInt(100, 1_000)
+            val origLen = rng.randomRange(100 until 1_000)
             val origData = ByteArray(origLen)
-            rng.nextBytes(origData)
+            rng.fillBytes(origData)
 
             val engine = randomEngine(rng)
             val normalEncoded = engine.encode(origData)
             val streamEncoded = MutableByteArrayWriter()
-            val interruptingWriter = InterruptingWriter(streamEncoded, Random(0xEE00 + it), 0.8)
+            val interruptingWriter = InterruptingWriter(streamEncoded, SmallRng.seedFromU64((0xEE00 + it).toULong()), 0.8)
             val streamEncoder = EncoderWriter(interruptingWriter, engine)
 
             var bytesConsumed = 0
             while (bytesConsumed < origLen) {
-                val inputLen = minOf(rng.nextInt(0, 10), origLen - bytesConsumed)
+                val inputLen = minOf(rng.randomRange(0 until 10), origLen - bytesConsumed)
                 retryInterruptedWriteAll(
                     streamEncoder,
                     origData.copyOfRange(bytesConsumed, bytesConsumed + inputLen),
@@ -257,23 +258,23 @@ class EncoderWriterTest {
 
     @Test
     fun writesThatOnlyWritePartOfInputAndSometimesInterruptProduceCorrectEncodedData() {
-        val rng = Random(0xE003)
+        val rng = SmallRng.seedFromU64(0xE003uL)
 
         repeat(20) {
-            val origLen = rng.nextInt(100, 1_000)
+            val origLen = rng.randomRange(100 until 1_000)
             val origData = ByteArray(origLen)
-            rng.nextBytes(origData)
+            rng.fillBytes(origData)
 
             val engine = randomEngine(rng)
             val normalEncoded = engine.encode(origData)
             val streamEncoded = MutableByteArrayWriter()
             val partialWriter =
-                PartialInterruptingWriter(streamEncoded, Random(0xEF00 + it), 0.1, 0.1)
+                PartialInterruptingWriter(streamEncoded, SmallRng.seedFromU64((0xEF00 + it).toULong()), 0.1, 0.1)
             val streamEncoder = EncoderWriter(partialWriter, engine)
 
             var bytesConsumed = 0
             while (bytesConsumed < origLen) {
-                val inputLen = minOf(rng.nextInt(0, 100), origLen - bytesConsumed)
+                val inputLen = minOf(rng.randomRange(0 until 100), origLen - bytesConsumed)
                 val result = streamEncoder.write(origData, bytesConsumed, inputLen)
                 if (result.isSuccess) {
                     bytesConsumed += result.getOrThrow()
@@ -312,12 +313,12 @@ class EncoderWriterTest {
     }
 
     private fun doEncodeRandomConfigMatchesNormalEncode(maxInputLen: Int) {
-        val rng = Random(0xE004 + maxInputLen)
+        val rng = SmallRng.seedFromU64((0xE004 + maxInputLen).toULong())
 
         repeat(100) {
-            val origLen = rng.nextInt(100, 5_000)
+            val origLen = rng.randomRange(100 until 5_000)
             val origData = ByteArray(origLen)
-            rng.nextBytes(origData)
+            rng.fillBytes(origData)
 
             val engine = randomEngine(rng)
             val normalEncoded = engine.encode(origData)
@@ -326,7 +327,7 @@ class EncoderWriterTest {
 
             var bytesConsumed = 0
             while (bytesConsumed < origLen) {
-                val inputLen = minOf(rng.nextInt(0, maxInputLen), origLen - bytesConsumed)
+                val inputLen = minOf(rng.randomRange(0 until maxInputLen), origLen - bytesConsumed)
                 streamEncoder
                     .writeAll(origData.copyOfRange(bytesConsumed, bytesConsumed + inputLen))
                     .getOrThrow()
@@ -341,7 +342,7 @@ class EncoderWriterTest {
 
     private class InterruptingWriter(
         private val writer: ByteWriter,
-        private val rng: Random,
+        private val rng: Rng,
         private val fraction: Double,
     ) : ByteWriter {
         override fun write(
@@ -349,14 +350,14 @@ class EncoderWriterTest {
             offset: Int,
             length: Int,
         ): Result<Int> {
-            if (rng.nextDouble(0.0, 1.0) <= fraction) {
+            if (rng.randomBool(fraction)) {
                 return Result.failure(interrupted())
             }
             return writer.write(buffer, offset, length)
         }
 
         override fun flush(): Result<Unit> {
-            if (rng.nextDouble(0.0, 1.0) <= fraction) {
+            if (rng.randomBool(fraction)) {
                 return Result.failure(interrupted())
             }
             return writer.flush()
@@ -365,7 +366,7 @@ class EncoderWriterTest {
 
     private class PartialInterruptingWriter(
         private val writer: ByteWriter,
-        private val rng: Random,
+        private val rng: Rng,
         private val fullInputFraction: Double,
         private val noInterruptFraction: Double,
     ) : ByteWriter {
@@ -374,14 +375,14 @@ class EncoderWriterTest {
             offset: Int,
             length: Int,
         ): Result<Int> {
-            if (rng.nextDouble(0.0, 1.0) > noInterruptFraction) {
+            if (rng.randomBool(1.0 - noInterruptFraction)) {
                 return Result.failure(interrupted())
             }
 
-            return if (rng.nextDouble(0.0, 1.0) <= fullInputFraction || length <= 1) {
+            return if (rng.randomBool(fullInputFraction) || length <= 1) {
                 writer.write(buffer, offset, length)
             } else {
-                writer.write(buffer, offset, rng.nextInt(0, length))
+                writer.write(buffer, offset, rng.randomRange(0 until length))
             }
         }
 

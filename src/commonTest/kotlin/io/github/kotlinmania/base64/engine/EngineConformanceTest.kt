@@ -18,7 +18,8 @@ import io.github.kotlinmania.base64.randomAlphabet
 import io.github.kotlinmania.base64.randomConfig
 import io.github.kotlinmania.base64.read.DecoderReader
 import io.github.kotlinmania.base64.readToEnd
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -29,7 +30,7 @@ import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD as STANDARD_E
 class EngineConformanceTest {
     @Test
     fun naiveMatchesGeneralPurposeAcrossRandomConfigs() {
-        val rng = Random(0xE109)
+        val rng = SmallRng.seedFromU64(0xE109uL)
         repeat(1_000) {
             val alphabet = randomAlphabet(rng)
             val config = randomConfig(rng)
@@ -43,8 +44,8 @@ class EngineConformanceTest {
                         decodePaddingMode = config.decodePaddingMode,
                     ),
                 )
-            val input = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(input)
 
             val generalEncoded = generalPurpose.encode(input)
             val naiveEncoded = naive.encode(input)
@@ -121,11 +122,11 @@ class EngineConformanceTest {
 
     @Test
     fun roundtripRandom() {
-        val rng = Random(0xE099)
+        val rng = SmallRng.seedFromU64(0xE099uL)
         repeat(500) {
             val engine = randomEngine(rng)
-            val original = ByteArray(rng.nextInt(1, 1000))
-            rng.nextBytes(original)
+            val original = ByteArray(rng.randomRange(1 until 1000))
+            rng.fillBytes(original)
             val encoded = ByteArray(encodedLen(original.size, engine.config().encodePadding()) ?: error("unexpected overflow"))
             val decoded = ByteArray(original.size)
 
@@ -166,13 +167,13 @@ class EngineConformanceTest {
 
     @Test
     fun encodeDoesntWriteExtraBytes() {
-        val rng = Random(0xE100)
+        val rng = SmallRng.seedFromU64(0xE100uL)
         repeat(500) {
             val engine = randomEngine(rng)
-            val orig = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(orig)
+            val orig = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(orig)
             val padded = engine.config().encodePadding()
-            val encodeBuf = ByteArray(orig.size * 2 + 1024) { rng.nextInt(0, 256).toByte() }
+            val encodeBuf = ByteArray(orig.size * 2 + 1024) { rng.randomRange(0..255).toByte() }
             val backup = encodeBuf.copyOf()
             val expectedNoPadLen = encodedLen(orig.size, false) ?: error("unexpected overflow")
 
@@ -197,10 +198,10 @@ class EngineConformanceTest {
 
     @Test
     fun encodeEngineSliceFitsIntoPreciselySizedSlice() {
-        val rng = Random(0xE101)
+        val rng = SmallRng.seedFromU64(0xE101uL)
         repeat(500) {
-            val input = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(input)
             val engine = randomEngine(rng)
             val encodedSize = encodedLen(input.size, engine.config().encodePadding()) ?: error("unexpected overflow")
             val encoded = ByteArray(encodedSize)
@@ -215,14 +216,14 @@ class EngineConformanceTest {
 
     @Test
     fun decodeDoesntWriteExtraBytes() {
-        val rng = Random(0xE102)
+        val rng = SmallRng.seedFromU64(0xE102uL)
         repeat(500) {
             val engine = randomEngine(rng)
-            val orig = ByteArray(rng.nextInt(1, 1000))
-            rng.nextBytes(orig)
+            val orig = ByteArray(rng.randomRange(1 until 1000))
+            rng.fillBytes(orig)
             val encoded = engine.encode(orig).encodeToByteArray()
             val prefixLen = 1024
-            val decodeBuf = ByteArray(prefixLen * 2 + orig.size * 2) { rng.nextInt(0, 256).toByte() }
+            val decodeBuf = ByteArray(prefixLen * 2 + orig.size * 2) { rng.randomRange(0..255).toByte() }
             val backup = decodeBuf.copyOf()
             val window = ByteArray(decodeBuf.size - prefixLen)
 
@@ -363,17 +364,17 @@ class EngineConformanceTest {
 
     @Test
     fun decodeInvalidByteError() {
-        val rng = Random(0xE103)
+        val rng = SmallRng.seedFromU64(0xE103uL)
         repeat(1_000) {
             val alphabet = randomAlphabet(rng)
             val engine = randomEngine(rng, alphabet)
-            val orig = ByteArray(rng.nextInt(1, 1000))
-            rng.nextBytes(orig)
+            val orig = ByteArray(rng.randomRange(1 until 1000))
+            rng.fillBytes(orig)
             val encoded = engine.encode(orig).encodeToByteArray()
             val invalidByte =
-                generateSequence { rng.nextInt(0, 256).toByte() }
+                generateSequence { rng.randomRange(0..255).toByte() }
                     .first { it !in alphabet.symbols && it != PAD_BYTE }
-            val invalidIndex = rng.nextInt(0, orig.size)
+            val invalidIndex = rng.randomRange(0 until orig.size)
             encoded[invalidIndex] = invalidByte
             assertDecodeError(DecodeError.InvalidByte(invalidIndex, invalidByte), engine.decodeSliceUnchecked(encoded, ByteArray(orig.size)))
         }
@@ -406,14 +407,14 @@ class EngineConformanceTest {
 
     @Test
     fun decodePaddingStartsBeforeFinalChunkErrorInvalidByteAtFirstPad() {
-        val rng = Random(0xE105)
+        val rng = SmallRng.seedFromU64(0xE105uL)
         for (mode in padModesAllowingPadding()) {
             val engine = standardWithPadMode(true, mode)
             repeat(500) {
-                val suffixLen = rng.nextInt(1, 5)
-                val encoded = prefixedBytes("AAAA", rng.nextInt(1, 256), "").toMutableList()
+                val suffixLen = rng.randomRange(1 until 5)
+                val encoded = prefixedBytes("AAAA", rng.randomRange(1 until 256), "").toMutableList()
                 repeat(suffixLen) { encoded.add(PAD_BYTE) }
-                val paddingLen = rng.nextInt(suffixLen + 1, encoded.size)
+                val paddingLen = rng.randomRange(suffixLen + 1 until encoded.size)
                 val paddingStart = encoded.size - paddingLen
                 for (index in paddingStart until encoded.size) encoded[index] = PAD_BYTE
                 assertDecodeError(DecodeError.InvalidByte(paddingStart, PAD_BYTE), engine.decode(encoded.toByteArray()))
@@ -423,12 +424,12 @@ class EngineConformanceTest {
 
     @Test
     fun decodeTooLittleDataBeforePaddingErrorInvalidByte() {
-        val rng = Random(0xE106)
+        val rng = SmallRng.seedFromU64(0xE106uL)
         for (mode in allPadModes()) {
             val engine = standardWithPadMode(true, mode)
             repeat(500) {
-                val suffixDataLen = rng.nextInt(0, 2)
-                val prefixQuadLen = rng.nextInt(0, 256)
+                val suffixDataLen = rng.randomRange(0..1)
+                val prefixQuadLen = rng.randomRange(0..255)
                 for (paddingLen in 1..(4 - suffixDataLen)) {
                     val encoded = prefixedBytes("ABCD", prefixQuadLen, "").toMutableList()
                     repeat(suffixDataLen) { encoded.add('A'.code.toByte()) }
@@ -545,10 +546,10 @@ class EngineConformanceTest {
 
     @Test
     fun decodeIntoSliceFitsInPreciselySizedSlice() {
-        val rng = Random(0xE107)
+        val rng = SmallRng.seedFromU64(0xE107uL)
         repeat(500) {
-            val original = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(original)
+            val original = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(original)
             val engine = randomEngine(rng)
             val encoded = engine.encode(original).encodeToByteArray()
             val decoded = ByteArray(original.size)
@@ -624,10 +625,10 @@ class EngineConformanceTest {
             return
         }
 
-        val rng = Random(0xE108)
+        val rng = SmallRng.seedFromU64(0xE108uL)
         for (originalLen in 0 until 1000) {
             val original = ByteArray(originalLen)
-            rng.nextBytes(original)
+            rng.fillBytes(original)
             for (mode in allPadModes()) {
                 val engine =
                     standardWithPadMode(
@@ -656,13 +657,13 @@ class EngineConformanceTest {
         engine: EngineSubject,
         suffixes: List<Pair<String, Int>>,
     ) {
-        val rng = Random(0xE104)
+        val rng = SmallRng.seedFromU64(0xE104uL)
         repeat(500) {
             for ((suffix, suffixOffset) in suffixes) {
-                val encoded = prefixedBytes("AAAA", rng.nextInt(0, 257), suffix)
+                val encoded = prefixedBytes("AAAA", rng.randomRange(0..256), suffix)
                 val lastNonPaddingOffset = encoded.size - 1 - suffixOffset
-                val paddingEnd = rng.nextInt(0, lastNonPaddingOffset)
-                val paddingLen = rng.nextInt(1, minOf(100, paddingEnd + 1) + 1)
+                val paddingEnd = rng.randomRange(0 until lastNonPaddingOffset)
+                val paddingLen = rng.randomRange(1..minOf(100, paddingEnd + 1))
                 val paddingStart = (paddingEnd - paddingLen).coerceAtLeast(0)
                 for (index in paddingStart..paddingEnd) encoded[index] = PAD_BYTE
                 assertDecodeError(DecodeError.InvalidByte(paddingStart, PAD_BYTE), engine.decode(encoded))
@@ -710,11 +711,11 @@ class EngineConformanceTest {
     }
 
     private fun runRoundtripRandom(wrapper: EngineWrapper) {
-        val rng = Random(0xA100)
+        val rng = SmallRng.seedFromU64(0xA100uL)
         repeat(100) {
             val engine = wrapper.random(rng)
-            val input = ByteArray(rng.nextInt(1, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(1 until 1000))
+            rng.fillBytes(input)
             val encodedSize = encodedLen(input.size, engine.config().encodePadding()) ?: error("unexpected overflow")
             val encoded = ByteArray(encodedSize)
             val decoded = ByteArray(input.size)
@@ -728,12 +729,12 @@ class EngineConformanceTest {
     }
 
     private fun runEncodeDoesntWriteExtraBytes(wrapper: EngineWrapper) {
-        val rng = Random(0xA101)
+        val rng = SmallRng.seedFromU64(0xA101uL)
         repeat(100) {
             val engine = wrapper.random(rng)
-            val input = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(input)
-            val output = ByteArray(1024 + input.size * 2) { rng.nextInt(0, 256).toByte() }
+            val input = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(input)
+            val output = ByteArray(1024 + input.size * 2) { rng.randomRange(0..255).toByte() }
             val backup = output.copyOf()
 
             val encodedLenNoPad = engine.internalEncode(input, output)
@@ -745,11 +746,11 @@ class EngineConformanceTest {
     }
 
     private fun runEncodeSliceFitsPrecisely(wrapper: EngineWrapper) {
-        val rng = Random(0xA102)
+        val rng = SmallRng.seedFromU64(0xA102uL)
         repeat(100) {
             val engine = wrapper.random(rng)
-            val input = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(input)
             val output = ByteArray(encodedLen(input.size, engine.config().encodePadding()) ?: error("unexpected overflow"))
             assertEquals(output.size, engine.encodeSlice(input, output).getOrThrow())
             assertContentEquals(input, engine.decode(output).getOrThrow())
@@ -757,14 +758,14 @@ class EngineConformanceTest {
     }
 
     private fun runDecodeDoesntWriteExtraBytes(wrapper: EngineWrapper) {
-        val rng = Random(0xA103)
+        val rng = SmallRng.seedFromU64(0xA103uL)
         repeat(100) {
             val engine = wrapper.random(rng)
-            val input = ByteArray(rng.nextInt(1, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(1 until 1000))
+            rng.fillBytes(input)
             val encoded = engine.encode(input).bytes()
             val prefixLen = 64
-            val output = ByteArray(prefixLen + input.size + 64) { rng.nextInt(0, 256).toByte() }
+            val output = ByteArray(prefixLen + input.size + 64) { rng.randomRange(0..255).toByte() }
             val backup = output.copyOf()
             val window = ByteArray(output.size - prefixLen)
             val decodedLen = engine.decodeSliceUnchecked(encoded, window).getOrThrow()
@@ -895,15 +896,15 @@ class EngineConformanceTest {
     }
 
     private fun runInvalidByteChecks(wrapper: EngineWrapper) {
-        val rng = Random(0xA104)
+        val rng = SmallRng.seedFromU64(0xA104uL)
         repeat(100) {
             val alphabet = randomAlphabet(rng)
             val engine = wrapper.randomAlphabet(rng, alphabet)
-            val input = ByteArray(rng.nextInt(1, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(1 until 1000))
+            rng.fillBytes(input)
             val encoded = engine.encode(input).bytes()
-            val invalidByte = generateSequence { rng.nextInt(0, 256).toByte() }.first { it !in alphabet.symbols && it != PAD_BYTE }
-            val invalidIndex = rng.nextInt(0, input.size)
+            val invalidByte = generateSequence { rng.randomRange(0..255).toByte() }.first { it !in alphabet.symbols && it != PAD_BYTE }
+            val invalidIndex = rng.randomRange(0 until input.size)
             encoded[invalidIndex] = invalidByte
             assertDecodeError(DecodeError.InvalidByte(invalidIndex, invalidByte), engine.decodeSliceUnchecked(encoded, ByteArray(input.size)))
         }
@@ -933,11 +934,11 @@ class EngineConformanceTest {
     }
 
     private fun runDecodeIntoSlicePreciseChecks(wrapper: EngineWrapper) {
-        val rng = Random(0xA105)
+        val rng = SmallRng.seedFromU64(0xA105uL)
         repeat(100) {
             val engine = wrapper.random(rng)
-            val input = ByteArray(rng.nextInt(0, 1000))
-            rng.nextBytes(input)
+            val input = ByteArray(rng.randomRange(0 until 1000))
+            rng.fillBytes(input)
             val encoded = engine.encode(input).bytes()
             val decoded = ByteArray(input.size)
             assertEquals(input.size, engine.decodeSliceUnchecked(encoded, decoded).getOrThrow())
@@ -962,10 +963,10 @@ class EngineConformanceTest {
     }
 
     private fun runCheckedDecodeSliceOutputLengthChecks(wrapper: EngineWrapper) {
-        val rng = Random(0xA106)
+        val rng = SmallRng.seedFromU64(0xA106uL)
         for (originalLen in 0 until 64) {
             val original = ByteArray(originalLen)
-            rng.nextBytes(original)
+            rng.fillBytes(original)
             for (mode in allPadModes()) {
                 val engine = wrapper.standardWithPadMode(mode != DecodePaddingMode.RequireNone, mode)
                 val encoded = engine.encode(original).bytes()
@@ -1106,7 +1107,7 @@ class EngineConformanceTest {
         GeneralPurposeWrapper.standardAllowTrailingBits()
 
     private fun randomEngine(
-        rng: Random,
+        rng: Rng,
         alphabet: Alphabet = randomAlphabet(rng),
     ): EngineSubject = GeneralPurposeSubject(GeneralPurpose(alphabet, randomConfig(rng)))
 
@@ -1174,11 +1175,11 @@ private interface EngineWrapper {
 
     fun standardAllowTrailingBits(): EngineSubject
 
-    fun random(rng: Random): EngineSubject =
+    fun random(rng: Rng): EngineSubject =
         randomAlphabet(rng).let { alphabet -> randomAlphabet(rng, alphabet) }
 
     fun randomAlphabet(
-        rng: Random,
+        rng: Rng,
         alphabet: Alphabet,
     ): EngineSubject
 }
@@ -1219,7 +1220,7 @@ private object GeneralPurposeWrapper : EngineWrapper {
         )
 
     override fun randomAlphabet(
-        rng: Random,
+        rng: Rng,
         alphabet: Alphabet,
     ): EngineSubject =
         GeneralPurposeSubject(GeneralPurpose(alphabet, randomConfig(rng)))
@@ -1278,11 +1279,11 @@ private object NaiveWrapper : EngineWrapper {
         )
 
     override fun randomAlphabet(
-        rng: Random,
+        rng: Rng,
         alphabet: Alphabet,
     ): EngineSubject {
         val mode =
-            when (rng.nextInt(3)) {
+            when (rng.randomRange(0..2)) {
                 0 -> DecodePaddingMode.Indifferent
                 1 -> DecodePaddingMode.RequireCanonical
                 else -> DecodePaddingMode.RequireNone
@@ -1293,11 +1294,11 @@ private object NaiveWrapper : EngineWrapper {
                 NaiveConfig(
                     shouldEncodePadding =
                         when (mode) {
-                            DecodePaddingMode.Indifferent -> rng.nextBoolean()
+                            DecodePaddingMode.Indifferent -> rng.randomBool()
                             DecodePaddingMode.RequireCanonical -> true
                             DecodePaddingMode.RequireNone -> false
                         },
-                    decodeAllowTrailingBits = rng.nextBoolean(),
+                    decodeAllowTrailingBits = rng.randomBool(),
                     decodePaddingMode = mode,
                 ),
             ),
@@ -1322,7 +1323,7 @@ private object DecoderReaderEngineWrapper : EngineWrapper {
         DecoderReaderSubject(GeneralPurposeWrapper.standardAllowTrailingBits())
 
     override fun randomAlphabet(
-        rng: Random,
+        rng: Rng,
         alphabet: Alphabet,
     ): EngineSubject =
         DecoderReaderSubject(GeneralPurposeWrapper.randomAlphabet(rng, alphabet))

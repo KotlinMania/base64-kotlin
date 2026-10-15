@@ -9,7 +9,8 @@ import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD
 import io.github.kotlinmania.base64.engine.generalpurpose.URL_SAFE_NO_PAD
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -81,7 +82,7 @@ class EncodeTest {
         val encodedDataWithPrefix = StringBuilder()
         val decoded = mutableListOf<Byte>()
 
-        val random = Random(0xE11C0DE)
+        val random = SmallRng.seedFromU64(0xE11C0DEuL)
 
         repeat(RANDOM_TRIALS) {
             origData.clear()
@@ -90,13 +91,13 @@ class EncodeTest {
             encodedDataWithPrefix.clear()
             decoded.clear()
 
-            val inputLen = random.nextInt(0, 1000)
+            val inputLen = random.randomRange(0 until 1000)
 
             repeat(inputLen) {
                 origData.add(randomByte(random))
             }
 
-            val prefixLen = random.nextInt(0, 1000)
+            val prefixLen = random.randomRange(0 until 1000)
             repeat(prefixLen) {
                 // getting convenient random single-byte printable chars that aren't base64 is
                 // annoying
@@ -142,7 +143,7 @@ class EncodeTest {
         var encodedDataOriginalState = ByteArray(0)
         val decoded = mutableListOf<Byte>()
 
-        val random = Random(0x51CE)
+        val random = SmallRng.seedFromU64(0x51CEuL)
 
         repeat(RANDOM_TRIALS) {
             origData.clear()
@@ -150,14 +151,14 @@ class EncodeTest {
             encodedDataOriginalState = ByteArray(0)
             decoded.clear()
 
-            val inputLen = random.nextInt(0, 1000)
+            val inputLen = random.randomRange(0 until 1000)
 
             repeat(inputLen) {
                 origData.add(randomByte(random))
             }
 
             // plenty of existing garbage in the encoded buffer
-            encodedData = ByteArray(10 * inputLen).also { random.nextBytes(it) }
+            encodedData = ByteArray(10 * inputLen).also { random.fillBytes(it) }
 
             encodedDataOriginalState = encodedData.copyOf()
 
@@ -193,13 +194,13 @@ class EncodeTest {
         val input = mutableListOf<Byte>()
         var output = ByteArray(0)
 
-        val random = Random(0x70511CE)
+        val random = SmallRng.seedFromU64(0x70511CEuL)
 
         repeat(RANDOM_TRIALS) {
             input.clear()
             output = ByteArray(0)
 
-            val inputLen = random.nextInt(0, 1000)
+            val inputLen = random.randomRange(0 until 1000)
 
             repeat(inputLen) {
                 input.add(randomByte(random))
@@ -210,7 +211,7 @@ class EncodeTest {
 
             // fill up the output buffer with garbage
             val encodedSize = encodedLen(inputLen, config.encodePadding())!!
-            output = ByteArray(encodedSize).also { random.nextBytes(it) }
+            output = ByteArray(encodedSize).also { random.fillBytes(it) }
 
             val origOutputBuf = output.copyOf()
 
@@ -232,13 +233,13 @@ class EncodeTest {
         val input = mutableListOf<Byte>()
         var output = ByteArray(0)
 
-        val random = Random(0x0DA7A)
+        val random = SmallRng.seedFromU64(0x0DA7AuL)
 
         repeat(RANDOM_TRIALS) {
             input.clear()
             output = ByteArray(0)
 
-            val inputLen = random.nextInt(0, 1000)
+            val inputLen = random.randomRange(0 until 1000)
 
             repeat(inputLen) {
                 input.add(randomByte(random))
@@ -248,7 +249,7 @@ class EncodeTest {
 
             // fill up the output buffer with garbage
             val encodedSize = encodedLen(inputLen, engine.config().encodePadding())!!
-            output = ByteArray(encodedSize + 1000).also { random.nextBytes(it) }
+            output = ByteArray(encodedSize + 1000).also { random.fillBytes(it) }
 
             val origOutputBuf = output.copyOf()
 
@@ -269,14 +270,14 @@ class EncodeTest {
     fun addPaddingRandomValidUtf8() {
         var output = ByteArray(0)
 
-        val random = Random(0x0AD)
+        val random = SmallRng.seedFromU64(0x0ADuL)
 
         // cover our bases for length % 4
         for (unpaddedOutputLen in 0 until 20) {
             output = ByteArray(0)
 
             // fill output with random
-            output = ByteArray(100).also { random.nextBytes(it) }
+            output = ByteArray(100).also { random.fillBytes(it) }
 
             val origOutputBuf = output.copyOf()
 
@@ -302,7 +303,7 @@ class EncodeTest {
         assertEquals(encLen, encodedLen(inputLen, padded))
 
         val bytes = mutableListOf<Byte>()
-        val random = Random(inputLen)
+        val random = SmallRng.seedFromU64(inputLen.toULong())
 
         repeat(inputLen) {
             bytes.add(randomByte(random))
@@ -353,19 +354,19 @@ class EncodeTest {
         }
     }
 
-    private fun randomConfig(random: Random): Config =
-        when (random.nextInt(2)) {
+    private fun randomConfig(random: Rng): Config =
+        when (random.randomRange(0..1)) {
             0 -> PAD
             else -> NO_PAD
         }
 
-    private fun randomEngine(random: Random): GeneralPurpose =
-        when (random.nextInt(4)) {
+    private fun randomEngine(random: Rng): GeneralPurpose =
+        when (random.randomRange(0..3)) {
             0 -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.STANDARD, PAD)
             1 -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.STANDARD, NO_PAD)
             2 -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, PAD)
             else -> GeneralPurpose(io.github.kotlinmania.base64.alphabet.URL_SAFE, NO_PAD)
         }
 
-    private fun randomByte(random: Random): Byte = ByteArray(1).also { random.nextBytes(it) }[0]
+    private fun randomByte(random: Rng): Byte = ByteArray(1).also { random.fillBytes(it) }[0]
 }

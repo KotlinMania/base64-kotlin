@@ -11,7 +11,8 @@ import io.github.kotlinmania.base64.alphabet.URL_SAFE
 import io.github.kotlinmania.base64.engine.DecodePaddingMode
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -19,12 +20,12 @@ import kotlin.test.assertEquals
 class CoreTest {
     @Test
     fun roundtripRandomConfigShort() {
-        roundtripRandomConfig(0 until 50, 10_000, Random(0xB640))
+        roundtripRandomConfig(0 until 50, 10_000, SmallRng.seedFromU64(0xB640uL))
     }
 
     @Test
     fun roundtripRandomConfigLong() {
-        roundtripRandomConfig(0 until 1000, 10_000, Random(0xB641))
+        roundtripRandomConfig(0 until 1000, 10_000, SmallRng.seedFromU64(0xB641uL))
     }
 
     private fun assertEncodeSanity(
@@ -50,17 +51,17 @@ class CoreTest {
     private fun roundtripRandomConfig(
         inputLenRange: IntRange,
         iterations: Int,
-        rng: Random,
+        rng: Rng,
     ) {
         val encodedBuf = StringBuilder()
 
         repeat(iterations) {
             encodedBuf.clear()
 
-            val inputLen = rng.nextInt(inputLenRange.first, inputLenRange.last + 1)
+            val inputLen = rng.randomRange(inputLenRange)
             val engine = randomEngine(rng)
             val inputBuf = ByteArray(inputLen)
-            rng.nextBytes(inputBuf)
+            rng.fillBytes(inputBuf)
 
             engine.encodeString(inputBuf, encodedBuf)
 
@@ -69,9 +70,9 @@ class CoreTest {
         }
     }
 
-    private fun randomConfig(rng: Random): GeneralPurposeConfig {
+    private fun randomConfig(rng: Rng): GeneralPurposeConfig {
         val mode =
-            when (rng.nextInt(3)) {
+            when (rng.randomRange(0..2)) {
                 0 -> DecodePaddingMode.Indifferent
                 1 -> DecodePaddingMode.RequireCanonical
                 else -> DecodePaddingMode.RequireNone
@@ -80,17 +81,17 @@ class CoreTest {
         return GeneralPurposeConfig()
             .withEncodePadding(
                 when (mode) {
-                    DecodePaddingMode.Indifferent -> rng.nextBoolean()
+                    DecodePaddingMode.Indifferent -> rng.randomBool()
                     DecodePaddingMode.RequireCanonical -> true
                     DecodePaddingMode.RequireNone -> false
                 },
             ).withDecodePaddingMode(mode)
-            .withDecodeAllowTrailingBits(rng.nextBoolean())
+            .withDecodeAllowTrailingBits(rng.randomBool())
     }
 
-    private fun randomAlphabet(rng: Random): Alphabet = ALPHABETS[rng.nextInt(ALPHABETS.size)]
+    private fun randomAlphabet(rng: Rng): Alphabet = ALPHABETS[rng.randomRange(0 until ALPHABETS.size)]
 
-    private fun randomEngine(rng: Random): GeneralPurpose =
+    private fun randomEngine(rng: Rng): GeneralPurpose =
         GeneralPurpose(randomAlphabet(rng), randomConfig(rng))
 
     private companion object {

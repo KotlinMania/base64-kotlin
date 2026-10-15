@@ -5,7 +5,8 @@ import io.github.kotlinmania.base64.engine.Engine
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -22,7 +23,7 @@ class TopLevelRoundtripTest {
         maxRounds: Int,
     ) {
         val numRounds = calculateNumberOfRounds(byteLen, approxValuesPerByte, maxRounds)
-        val random = Random(0xB64 + byteLen)
+        val random = SmallRng.seedFromU64((0xB64 + byteLen).toULong())
         val decodeBuf = mutableListOf<Byte>()
 
         repeat(numRounds) {
@@ -160,7 +161,7 @@ class TopLevelRoundtripTest {
         }
     }
 
-    private fun randomByte(random: Random): Byte = ByteArray(1).also { random.nextBytes(it) }[0]
+    private fun randomByte(random: Rng): Byte = ByteArray(1).also { random.fillBytes(it) }[0]
 
     private fun saturatingMultiply(
         left: Long,
