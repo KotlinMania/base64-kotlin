@@ -14,11 +14,11 @@ import io.github.kotlinmania.base64.io.ByteReader
 import io.github.kotlinmania.base64.io.ByteWriter
 import io.github.kotlinmania.base64.io.StreamError
 import io.github.kotlinmania.base64.io.StreamErrorKind
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
 
-internal fun randomConfig(rng: Random): GeneralPurposeConfig {
+internal fun randomConfig(rng: Rng): GeneralPurposeConfig {
     val mode =
-        when (rng.nextInt(3)) {
+        when (rng.randomRange(0..2)) {
             0 -> DecodePaddingMode.Indifferent
             1 -> DecodePaddingMode.RequireCanonical
             else -> DecodePaddingMode.RequireNone
@@ -27,17 +27,17 @@ internal fun randomConfig(rng: Random): GeneralPurposeConfig {
     return GeneralPurposeConfig()
         .withEncodePadding(
             when (mode) {
-                DecodePaddingMode.Indifferent -> rng.nextBoolean()
+                DecodePaddingMode.Indifferent -> rng.randomBool()
                 DecodePaddingMode.RequireCanonical -> true
                 DecodePaddingMode.RequireNone -> false
             },
         ).withDecodePaddingMode(mode)
-        .withDecodeAllowTrailingBits(rng.nextBoolean())
+        .withDecodeAllowTrailingBits(rng.randomBool())
 }
 
-internal fun randomAlphabet(rng: Random): Alphabet = ALPHABETS[rng.nextInt(ALPHABETS.size)]
+internal fun randomAlphabet(rng: Rng): Alphabet = ALPHABETS[rng.randomRange(0 until ALPHABETS.size)]
 
-internal fun randomEngine(rng: Random): GeneralPurpose =
+internal fun randomEngine(rng: Rng): GeneralPurpose =
     GeneralPurpose(randomAlphabet(rng), randomConfig(rng))
 
 internal fun ByteReader.readToEnd(output: MutableList<Byte>): Result<Int> {

@@ -3,19 +3,19 @@ package io.github.kotlinmania.base64.write
 
 import io.github.kotlinmania.base64.randomEngine
 import io.github.kotlinmania.base64.writeAll
-import kotlin.random.Random
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EncoderStringWriterTest {
     @Test
     fun everyPossibleSplitOfInput() {
-        val rng = Random(0x5101)
+        val rng = SmallRng.seedFromU64(0x5101uL)
         val size = 500
 
         for (i in 0 until size) {
             val origData = ByteArray(size)
-            rng.nextBytes(origData)
+            rng.fillBytes(origData)
 
             val engine = randomEngine(rng)
             val normalEncoded = engine.encode(origData)
@@ -31,12 +31,12 @@ class EncoderStringWriterTest {
 
     @Test
     fun incrementalWrites() {
-        val rng = Random(0x5102)
+        val rng = SmallRng.seedFromU64(0x5102uL)
         val size = 500
 
         repeat(size) {
             val origData = ByteArray(size)
-            rng.nextBytes(origData)
+            rng.fillBytes(origData)
 
             val engine = randomEngine(rng)
             val normalEncoded = engine.encode(origData)
@@ -44,7 +44,7 @@ class EncoderStringWriterTest {
 
             var offset = 0
             while (offset < size) {
-                val nibbleSize = minOf(rng.nextInt(0, 65), size - offset)
+                val nibbleSize = minOf(rng.randomRange(0 until 65), size - offset)
                 val len = streamEncoder.write(origData, offset, nibbleSize).getOrThrow()
                 offset += len
             }

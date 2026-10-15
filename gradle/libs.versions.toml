@@ -9,6 +9,10 @@ detekt = "2.0.0-alpha.6"
 ktlint = "14.2.0"
 ktlintEngine = "1.8.0"
 kotlinxBenchmark = "0.5.0"
+rand = "0.1.0"
+onceCell = "0.1.1"
+strum = "0.2.0"
+clap = "0.1.2"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -26,6 +30,10 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "collectionsImmutable" }
 kotlinx-benchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
+rand-kotlin = { module = "io.github.kotlinmania:rand-kotlin", version.ref = "rand" }
+once-cell-kotlin = { module = "io.github.kotlinmania:once-cell-kotlin", version.ref = "onceCell" }
+strum-kotlin = { module = "io.github.kotlinmania:strum-kotlin", version.ref = "strum" }
+clap-kotlin = { module = "io.github.kotlinmania:clap-kotlin", version.ref = "clap" }
 
 [bundles]
 base64-commonMain = [
@@ -35,3 +43,10 @@ base64-commonMain = [
   "kotlinx-datetime",
   "collections-immutable",
 ]
+base64-commonTest = [
+  "rand-kotlin",
+  "once-cell-kotlin",
+  "strum-kotlin",
+  "clap-kotlin",
+]
+

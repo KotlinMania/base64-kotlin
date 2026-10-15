@@ -7,7 +7,8 @@ import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.STANDARD
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -26,7 +27,7 @@ class DecodeTest {
         val decodedWithoutPrefix = mutableListOf<Byte>()
         val prefix = mutableListOf<Byte>()
 
-        val random = Random(0xDEC0DE)
+        val random = SmallRng.seedFromU64(0xDEC0DEuL)
 
         repeat(DECODE_RANDOM_TRIALS) {
             origData.clear()
@@ -35,7 +36,7 @@ class DecodeTest {
             decodedWithoutPrefix.clear()
             prefix.clear()
 
-            val inputLen = random.nextInt(0, 1000)
+            val inputLen = random.randomRange(0 until 1000)
 
             repeat(inputLen) {
                 origData.add(randomByte(random))
@@ -45,7 +46,7 @@ class DecodeTest {
             engine.encodeString(origData.toByteArray(), encodedData)
             assertEncodeSanity(encodedData.toString(), engine.config().encodePadding(), inputLen)
 
-            val prefixLen = random.nextInt(0, 1000)
+            val prefixLen = random.randomRange(0 until 1000)
 
             // fill the buf with a prefix
             repeat(prefixLen) {
@@ -142,7 +143,7 @@ class DecodeTest {
         var decodeBuf = ByteArray(0)
         var decodeBufCopy = ByteArray(0)
 
-        val random = Random(0xD511CE)
+        val random = SmallRng.seedFromU64(0xD511CEuL)
 
         repeat(DECODE_RANDOM_TRIALS) {
             origData.clear()
@@ -150,7 +151,7 @@ class DecodeTest {
             decodeBuf = ByteArray(0)
             decodeBufCopy = ByteArray(0)
 
-            val inputLen = random.nextInt(0, 1000)
+            val inputLen = random.randomRange(0 until 1000)
 
             repeat(inputLen) {
                 origData.add(randomByte(random))
@@ -161,7 +162,7 @@ class DecodeTest {
             assertEncodeSanity(encodedData.toString(), engine.config().encodePadding(), inputLen)
 
             // fill the buffer with random garbage, long enough to have some room before and after
-            decodeBuf = ByteArray(5000).also { random.nextBytes(it) }
+            decodeBuf = ByteArray(5000).also { random.fillBytes(it) }
 
             // keep a copy for later comparison
             decodeBufCopy = decodeBuf.copyOf()
@@ -270,8 +271,8 @@ class DecodeTest {
         }
     }
 
-    private fun randomEngine(random: Random): GeneralPurpose =
-        when (random.nextInt(5)) {
+    private fun randomEngine(random: Rng): GeneralPurpose =
+        when (random.randomRange(0..4)) {
             0 -> {
                 GeneralPurpose(STANDARD_ALPHABET, PAD)
             }
@@ -298,5 +299,5 @@ class DecodeTest {
             }
         }
 
-    private fun randomByte(random: Random): Byte = ByteArray(1).also { random.nextBytes(it) }[0]
+    private fun randomByte(random: Rng): Byte = ByteArray(1).also { random.fillBytes(it) }[0]
 }

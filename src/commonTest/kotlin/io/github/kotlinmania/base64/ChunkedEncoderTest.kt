@@ -8,7 +8,7 @@ import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurpose
 import io.github.kotlinmania.base64.engine.generalpurpose.GeneralPurposeConfig
 import io.github.kotlinmania.base64.engine.generalpurpose.NO_PAD
 import io.github.kotlinmania.base64.engine.generalpurpose.PAD
-import kotlin.random.Random
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import io.github.kotlinmania.base64.alphabet.STANDARD as STANDARD_ALPHABET
@@ -45,7 +45,7 @@ class ChunkedEncoderTest {
     }
 
     private fun chunkedEncodeMatchesNormalEncodeRandom(sinkTestHelper: SinkTestHelper) {
-        val rng = Random(0x5EED)
+        val rng = SmallRng.seedFromU64(0x5EEDuL)
         val engines =
             listOf(
                 GeneralPurpose(STANDARD_ALPHABET, PAD),
@@ -55,9 +55,9 @@ class ChunkedEncoderTest {
             )
 
         repeat(256) {
-            val input = ByteArray(rng.nextInt(1, 10_000))
-            rng.nextBytes(input)
-            val engine = engines[rng.nextInt(engines.size)]
+            val input = ByteArray(rng.randomRange(1..9_999))
+            rng.fillBytes(input)
+            val engine = engines[rng.randomRange(0 until engines.size)]
 
             assertEquals(
                 engine.encode(input),

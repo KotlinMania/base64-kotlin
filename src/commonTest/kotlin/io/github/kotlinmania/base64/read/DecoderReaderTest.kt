@@ -12,7 +12,8 @@ import io.github.kotlinmania.base64.randomAlphabet
 import io.github.kotlinmania.base64.randomConfig
 import io.github.kotlinmania.base64.randomEngine
 import io.github.kotlinmania.base64.readToEnd
-import kotlin.random.Random
+import io.github.kotlinmania.rand.Rng
+import io.github.kotlinmania.rand.rngs.SmallRng
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -78,16 +79,16 @@ class DecoderReaderTest {
 
     @Test
     fun handlesShortReadFromDelegate() {
-        val rng = Random(0xD001)
+        val rng = SmallRng.seedFromU64(0xD001uL)
         val bytes = mutableListOf<Byte>()
         val decoded = mutableListOf<Byte>()
 
         repeat(250) {
             bytes.clear()
             decoded.clear()
-            val size = rng.nextInt(0, 10 * DECODER_BUF_SIZE)
+            val size = rng.randomRange(0 until 10 * DECODER_BUF_SIZE)
             val input = ByteArray(size)
-            rng.nextBytes(input)
+            rng.fillBytes(input)
             bytes.addAll(input.asList())
 
             val engine = randomEngine(rng)
@@ -103,13 +104,13 @@ class DecoderReaderTest {
 
     @Test
     fun readInShortIncrements() {
-        val rng = Random(0xD002)
+        val rng = SmallRng.seedFromU64(0xD002uL)
         val decoded = ByteArray(10 * DECODER_BUF_SIZE * 3)
 
         repeat(250) {
-            val size = rng.nextInt(0, 10 * DECODER_BUF_SIZE)
+            val size = rng.randomRange(0 until 10 * DECODER_BUF_SIZE)
             val bytes = ByteArray(size)
-            rng.nextBytes(bytes)
+            rng.fillBytes(bytes)
             decoded.fill(0)
 
             val engine = randomEngine(rng)
@@ -121,18 +122,18 @@ class DecoderReaderTest {
 
     @Test
     fun readInShortIncrementsWithShortDelegateReads() {
-        val rng = Random(0xD003)
+        val rng = SmallRng.seedFromU64(0xD003uL)
         val decoded = ByteArray(10 * DECODER_BUF_SIZE * 3)
 
         repeat(250) {
-            val size = rng.nextInt(0, 10 * DECODER_BUF_SIZE)
+            val size = rng.randomRange(0 until 10 * DECODER_BUF_SIZE)
             val bytes = ByteArray(size)
-            rng.nextBytes(bytes)
+            rng.fillBytes(bytes)
             decoded.fill(0)
 
             val engine = randomEngine(rng)
             val decoder = DecoderReader(ByteArrayReader(engine.encode(bytes).encodeToByteArray()), engine)
-            val shortReader = RandomShortRead(decoder, Random(0xE000 + it))
+            val shortReader = RandomShortRead(decoder, SmallRng.seedFromU64((0xE000 + it).toULong()))
 
             consumeWithShortReadsAndValidate(rng, bytes, decoded, shortReader)
         }
@@ -140,12 +141,12 @@ class DecoderReaderTest {
 
     @Test
     fun reportsInvalidLastSymbolCorrectly() {
-        val rng = Random(0xD004)
+        val rng = SmallRng.seedFromU64(0xD004uL)
 
         repeat(25) {
-            val size = rng.nextInt(1, 10 * DECODER_BUF_SIZE)
+            val size = rng.randomRange(1 until 10 * DECODER_BUF_SIZE)
             val bytes = ByteArray(size)
-            rng.nextBytes(bytes)
+            rng.fillBytes(bytes)
 
             val config = randomConfig(rng)
             val alphabet = randomAlphabet(rng)
@@ -171,16 +172,16 @@ class DecoderReaderTest {
 
     @Test
     fun reportsInvalidByteCorrectly() {
-        val rng = Random(0xD005)
+        val rng = SmallRng.seedFromU64(0xD005uL)
 
         repeat(250) {
-            val size = rng.nextInt(1, 10 * DECODER_BUF_SIZE)
+            val size = rng.randomRange(1 until 10 * DECODER_BUF_SIZE)
             val bytes = ByteArray(size)
-            rng.nextBytes(bytes)
+            rng.fillBytes(bytes)
 
             val engine = GeneralPurpose(io.github.kotlinmania.base64.alphabet.STANDARD, randomConfig(rng))
             val b64Bytes = engine.encode(bytes).encodeToByteArray()
-            b64Bytes[rng.nextInt(b64Bytes.size)] = '*'.code.toByte()
+            b64Bytes[rng.randomRange(0 until b64Bytes.size)] = '*'.code.toByte()
 
             val streamDecoded = mutableListOf<Byte>()
             val bulkDecoded = mutableListOf<Byte>()
@@ -198,17 +199,17 @@ class DecoderReaderTest {
 
     @Test
     fun internalPaddingErrorWithShortReadConcatenatedTextsInvalidByteError() {
-        val rng = Random(0xD006)
+        val rng = SmallRng.seedFromU64(0xD006uL)
         val engine = STANDARD
 
         repeat(250) {
-            val size = rng.nextInt(2, 10 * DECODER_BUF_SIZE)
+            val size = rng.randomRange(2 until 10 * DECODER_BUF_SIZE)
             val bytes = ByteArray(size)
-            rng.nextBytes(bytes)
+            rng.fillBytes(bytes)
 
             var split: Int
             while (true) {
-                split = rng.nextInt(1, size)
+                split = rng.randomRange(1 until size)
                 if (split % 3 != 0) break
             }
 
@@ -216,7 +217,7 @@ class DecoderReaderTest {
             val badBytePos = first.indexOf('=')
             val b64 = first + engine.encode(bytes.copyOfRange(split, bytes.size))
             val b64Bytes = b64.encodeToByteArray()
-            val readLen = rng.nextInt(1, 10)
+            val readLen = rng.randomRange(1 until 10)
             val wrappedReader = ShortRead(ByteArrayReader(b64Bytes), readLen)
             val readerDecoded = mutableListOf<Byte>()
             val bulkDecoded = mutableListOf<Byte>()
@@ -246,16 +247,16 @@ class DecoderReaderTest {
 
     @Test
     fun internalPaddingAnywhereError() {
-        val rng = Random(0xD007)
+        val rng = SmallRng.seedFromU64(0xD007uL)
         val engine = STANDARD
 
         repeat(250) {
             val bytes = ByteArray(10 * DECODER_BUF_SIZE)
-            rng.nextBytes(bytes)
+            rng.fillBytes(bytes)
             val b64Bytes = engine.encode(bytes).encodeToByteArray()
-            b64Bytes[rng.nextInt(0, bytes.size - 4)] = PAD_BYTE
+            b64Bytes[rng.randomRange(0 until bytes.size - 4)] = PAD_BYTE
 
-            val readLen = rng.nextInt(1, 10)
+            val readLen = rng.randomRange(1 until 10)
             val wrappedReader = ShortRead(ByteArrayReader(b64Bytes), readLen)
             val readerDecoded = mutableListOf<Byte>()
 
@@ -268,7 +269,7 @@ class DecoderReaderTest {
     }
 
     private fun consumeWithShortReadsAndValidate(
-        rng: Random,
+        rng: Rng,
         expectedBytes: ByteArray,
         decoded: ByteArray,
         shortReader: ByteReader,
@@ -282,7 +283,7 @@ class DecoderReaderTest {
                 assertContentEquals(expectedBytes, decoded.copyOfRange(0, totalRead))
                 break
             }
-            val decodeLen = rng.nextInt(1, maxOf(2, expectedBytes.size * 2))
+            val decodeLen = rng.randomRange(1 until maxOf(2, expectedBytes.size * 2))
             val read = shortReader.read(decoded, totalRead, decodeLen).getOrThrow()
             totalRead += read
         }
@@ -290,14 +291,14 @@ class DecoderReaderTest {
 
     private class RandomShortRead(
         private val delegate: ByteReader,
-        private val rng: Random,
+        private val rng: Rng,
     ) : ByteReader {
         override fun read(
             buffer: ByteArray,
             offset: Int,
             length: Int,
         ): Result<Int> {
-            val effectiveLen = minOf(rng.nextInt(1, 20), length)
+            val effectiveLen = minOf(rng.randomRange(1 until 20), length)
             return delegate.read(buffer, offset, effectiveLen)
         }
     }
