@@ -87,7 +87,6 @@ naming:
   MatchingDeclarationName: { active: false }
   ObjectPropertyNaming: { active: false }
   MemberNameEqualsClassName: { active: false }
-  NoNameShadowing: { active: false }
 
 exceptions:
   active: true

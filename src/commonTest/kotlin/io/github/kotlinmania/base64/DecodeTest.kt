@@ -162,7 +162,7 @@ class DecodeTest {
             assertEncodeSanity(encodedData.toString(), engine.config().encodePadding(), inputLen)
 
             // fill the buffer with random garbage, long enough to have some room before and after
-            decodeBuf = ByteArray(5000).also { random.fillBytes(it) }
+            decodeBuf = ByteArray(5000).also { buf -> random.fillBytes(buf) }
 
             // keep a copy for later comparison
             decodeBufCopy = decodeBuf.copyOf()

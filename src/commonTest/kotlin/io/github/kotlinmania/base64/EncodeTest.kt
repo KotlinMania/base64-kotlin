@@ -158,7 +158,7 @@ class EncodeTest {
             }
 
             // plenty of existing garbage in the encoded buffer
-            encodedData = ByteArray(10 * inputLen).also { random.fillBytes(it) }
+            encodedData = ByteArray(10 * inputLen).also { buf -> random.fillBytes(buf) }
 
             encodedDataOriginalState = encodedData.copyOf()
 
@@ -211,7 +211,7 @@ class EncodeTest {
 
             // fill up the output buffer with garbage
             val encodedSize = encodedLen(inputLen, config.encodePadding())!!
-            output = ByteArray(encodedSize).also { random.fillBytes(it) }
+            output = ByteArray(encodedSize).also { buf -> random.fillBytes(buf) }
 
             val origOutputBuf = output.copyOf()
 
@@ -249,7 +249,7 @@ class EncodeTest {
 
             // fill up the output buffer with garbage
             val encodedSize = encodedLen(inputLen, engine.config().encodePadding())!!
-            output = ByteArray(encodedSize + 1000).also { random.fillBytes(it) }
+            output = ByteArray(encodedSize + 1000).also { buf -> random.fillBytes(buf) }
 
             val origOutputBuf = output.copyOf()
 

@@ -373,7 +373,7 @@ class EngineConformanceTest {
             val encoded = engine.encode(orig).encodeToByteArray()
             val invalidByte =
                 generateSequence { rng.randomRange(0..255).toByte() }
-                    .first { it !in alphabet.symbols && it != PAD_BYTE }
+                    .first { byte -> byte !in alphabet.symbols && byte != PAD_BYTE }
             val invalidIndex = rng.randomRange(0 until orig.size)
             encoded[invalidIndex] = invalidByte
             assertDecodeError(DecodeError.InvalidByte(invalidIndex, invalidByte), engine.decodeSliceUnchecked(encoded, ByteArray(orig.size)))
@@ -903,7 +903,7 @@ class EngineConformanceTest {
             val input = ByteArray(rng.randomRange(1 until 1000))
             rng.fillBytes(input)
             val encoded = engine.encode(input).bytes()
-            val invalidByte = generateSequence { rng.randomRange(0..255).toByte() }.first { it !in alphabet.symbols && it != PAD_BYTE }
+            val invalidByte = generateSequence { rng.randomRange(0..255).toByte() }.first { byte -> byte !in alphabet.symbols && byte != PAD_BYTE }
             val invalidIndex = rng.randomRange(0 until input.size)
             encoded[invalidIndex] = invalidByte
             assertDecodeError(DecodeError.InvalidByte(invalidIndex, invalidByte), engine.decodeSliceUnchecked(encoded, ByteArray(input.size)))
