@@ -12,6 +12,28 @@ public const val ENCODER_BUF_SIZE: Int = 1024
 private const val MAX_INPUT_LEN: Int = ENCODER_BUF_SIZE / 4 * 3
 private const val MIN_ENCODE_CHUNK_SIZE: Int = 3
 
+/**
+ * A [ByteWriter] implementation that base64 encodes data before delegating to the wrapped writer.
+ *
+ * Because base64 has special handling for the end of the input data (padding, etc), there's a
+ * [finish] method on this type that encodes any leftover input bytes and adds padding if
+ * appropriate.
+ *
+ * # Panics
+ *
+ * Calling [write] (or related methods) or [finish] after [finish] has completed without
+ * error is invalid and will throw an [IllegalStateException].
+ *
+ * # Errors
+ *
+ * Base64 encoding itself does not generate errors, but errors from the wrapped writer will be
+ * returned as per the contract of [ByteWriter].
+ *
+ * # Performance
+ *
+ * It has some minor performance loss compared to encoding slices (a couple percent).
+ * It does not do any heap allocation.
+ */
 public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
     delegate: W,
     private val engine: Engine<C, D>,
@@ -22,6 +44,17 @@ public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
     private val output = ByteArray(ENCODER_BUF_SIZE)
     private var outputOccupiedLen = 0
 
+    /**
+     * Encode all remaining buffered data and write it, including any trailing incomplete input
+     * triples and associated padding.
+     *
+     * Once this succeeds, no further writes or calls to this method are allowed.
+     *
+     * This may write to the delegate writer multiple times if the delegate writer does not accept
+     * all input provided to its [write] each invocation.
+     *
+     * Returns the writer that this was constructed around.
+     */
     public fun finish(): Result<W> {
         if (delegate == null) {
             throw IllegalStateException("Encoder has already had finish() called")
@@ -90,6 +123,22 @@ public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
         return Result.success(Unit)
     }
 
+    /**
+     * Encode input and then write to the delegate writer.
+     *
+     * Under non-error circumstances, this returns [Result.success] with the value being the number of bytes
+     * of [buffer] consumed.
+     *
+     * If the previous call to [write] provided more (encoded) data than the delegate writer could
+     * accept in a single call to its [write], the remaining data is buffered. As long as buffered
+     * data is present, subsequent calls to [write] will try to write the remaining buffered data
+     * to the delegate and return either `Result.success(0)` -- and therefore not consume any of the input -- or
+     * an error.
+     *
+     * # Errors
+     *
+     * Any errors emitted by the delegate writer are returned.
+     */
     override fun write(
         buffer: ByteArray,
         offset: Int,
@@ -174,11 +223,30 @@ public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
             }
     }
 
+    /**
+     * Because this is usually treated as OK to call multiple times, it will *not* flush any
+     * incomplete chunks of input or write padding.
+     *
+     * # Errors
+     *
+     * The first error that is not of [StreamErrorKind.Interrupted] will be returned.
+     */
     override fun flush(): Result<Unit> {
         writeAllEncodedOutput().getOrElse { return Result.failure(it) }
         return (delegate ?: throw IllegalStateException("Writer must be present")).flush()
     }
 
+    /**
+     * Unwraps this [EncoderWriter], returning the base writer it writes base64 encoded output
+     * to.
+     *
+     * Normally this method should not be needed, since [finish] returns the inner writer if
+     * it completes successfully. That will also ensure all data has been flushed, which the
+     * [intoInner] function does *not* do.
+     *
+     * Calling this method after [finish] has completed successfully will throw an [IllegalStateException],
+     * since the writer has already been returned.
+     */
     public fun intoInner(): W =
         delegate ?: throw IllegalStateException("Encoder has already had finish() called")
 
@@ -195,6 +263,9 @@ public class EncoderWriter<C : Config, D : DecodeEstimate, W : ByteWriter>(
     internal fun fmt(): String = toString()
 
     public companion object {
+        /**
+         * Create a new encoder that will write to the provided delegate writer.
+         */
         public fun <C : Config, D : DecodeEstimate, W : ByteWriter> new(
             delegate: W,
             engine: Engine<C, D>,

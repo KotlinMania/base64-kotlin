@@ -1,4 +1,3 @@
-// port-lint: source engine/general_purpose/mod.rs
 package io.github.kotlinmania.base64.engine.generalpurpose
 
 import io.github.kotlinmania.base64.alphabet.Alphabet
