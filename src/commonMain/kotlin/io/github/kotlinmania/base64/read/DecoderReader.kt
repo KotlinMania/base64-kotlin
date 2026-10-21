@@ -16,6 +16,9 @@ public const val DECODER_BUF_SIZE: Int = 1024
 private const val BASE64_CHUNK_SIZE: Int = 4
 private const val DECODED_CHUNK_SIZE: Int = 3
 
+/**
+ * A [ByteReader] implementation that decodes base64 data read from an underlying reader.
+ */
 public class DecoderReader<C : Config, D : DecodeEstimate, R : ByteReader>(
     private val inner: R,
     private val engine: Engine<C, D>,

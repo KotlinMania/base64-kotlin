@@ -1,4 +1,3 @@
-// port-lint: source engine/mod.rs
 package io.github.kotlinmania.base64.engine
 
 import io.github.kotlinmania.base64.ChunkedEncoder
